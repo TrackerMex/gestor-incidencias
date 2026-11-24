@@ -1,0 +1,56 @@
+name: gestor-tive-test
+
+x-database-url: &database-url
+  DATABASE_URL: postgresql://gestor:${GESTOR_DB_PASSWORD:?Define GESTOR_DB_PASSWORD}@postgres:5432/gestor
+
+services:
+  postgres:
+    image: postgres:17.12-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: gestor
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD:?Define POSTGRES_ADMIN_PASSWORD}
+      GESTOR_DB_PASSWORD: ${GESTOR_DB_PASSWORD:?Define GESTOR_DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./deploy/postgres-init.sql:/docker-entrypoint-initdb.d/01-gestor.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres -d gestor"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  migrate:
+    image: gestor-tive-test:local
+    pull_policy: never
+    command: ["node", "scripts/migrate.mjs"]
+    environment: *database-url
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  app:
+    build: .
+    image: gestor-tive-test:local
+    restart: unless-stopped
+    init: true
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      <<: *database-url
+      GESTOR_ADMIN_PASSWORD: ${GESTOR_ADMIN_PASSWORD:?Define GESTOR_ADMIN_PASSWORD}
+      TIVE_ACCOUNT_ID: ${TIVE_ACCOUNT_ID:?Define TIVE_ACCOUNT_ID}
+      TIVE_WEBHOOK_SECRET: ${TIVE_WEBHOOK_SECRET:?Define TIVE_WEBHOOK_SECRET}
+    ports:
+      - "127.0.0.1:${GESTOR_HOST_PORT:-4325}:4321"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4321/', { signal: AbortSignal.timeout(3000) }).then(r => process.exit(r.status === 401 ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      start_period: 10s
+      retries: 4
+
+volumes:
+  pgdata:

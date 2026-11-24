@@ -1,0 +1,13 @@
+*
+!package.json
+!package-lock.json
+!astro.config.mjs
+!eslint.config.mjs
+!src/
+!src/**
+!scripts/
+!scripts/migrate.mjs
+!db/
+!db/schema.sql
+!tests/
+!tests/**
