@@ -1,11 +1,20 @@
-export const severities = { CRITICA: 'Crítica', RELEVANTE: 'Relevante', ORDINARIA: 'Ordinaria' };
-export const statuses = { SIN_CERRAR: 'Sin cerrar', CERRADO: 'Cerrado' };
+export const severities = {
+  CRITICA: "Crítica",
+  RELEVANTE: "Relevante",
+  ORDINARIA: "Ordinaria",
+};
+export const statuses = { SIN_CERRAR: "Sin cerrar", CERRADO: "Cerrado" };
 
-const dateTime = new Intl.DateTimeFormat('es-MX', {
-  dateStyle: 'short', timeStyle: 'medium', timeZone: 'America/Mexico_City',
+const dateTime = new Intl.DateTimeFormat("es-MX", {
+  dateStyle: "short",
+  timeStyle: "medium",
+  timeZone: "America/Mexico_City",
 });
-const calendarDate = new Intl.DateTimeFormat('en-CA', {
-  year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'America/Mexico_City',
+const calendarDate = new Intl.DateTimeFormat("en-CA", {
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  timeZone: "America/Mexico_City",
 });
 
 export function incidentKey(incident) {
@@ -13,7 +22,7 @@ export function incidentKey(incident) {
 }
 
 export function formatDate(value) {
-  return value ? dateTime.format(new Date(value)) : '—';
+  return value ? dateTime.format(new Date(value)) : "—";
 }
 
 export function dateKey(value) {
