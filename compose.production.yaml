@@ -5,7 +5,10 @@ x-database-url: &database-url
 
 services:
   postgres:
-    image: postgres:17.12-bookworm
+    build:
+      context: .
+      dockerfile: deploy/postgres.Dockerfile
+    image: gestor-tive-test-postgres:local
     restart: unless-stopped
     environment:
       POSTGRES_DB: gestor
@@ -14,7 +17,6 @@ services:
       GESTOR_DB_PASSWORD: ${GESTOR_DB_PASSWORD:?Define GESTOR_DB_PASSWORD}
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./deploy/postgres-init.sql:/docker-entrypoint-initdb.d/01-gestor.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres -d gestor"]
       interval: 5s

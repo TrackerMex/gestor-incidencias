@@ -59,7 +59,7 @@ docker compose --env-file .env.production -f compose.production.yaml up -d --bui
 docker compose --env-file .env.production -f compose.production.yaml ps
 ```
 
-La imagen ejecuta lint, pruebas y compilación durante la construcción. Compose aplica el esquema de la base antes de iniciar Astro. Para actualizar una instalación, trae la nueva versión del repo y repite el comando `up`.
+La imagen de Astro ejecuta lint, pruebas y compilación durante la construcción. La imagen de PostgreSQL contiene el SQL que inicializa el rol `gestor`, y Compose aplica el esquema antes de iniciar Astro. Para actualizar una instalación, trae la nueva versión del repo y repite el comando `up`.
 
 En el panel DNS de `trackersystem.tech`, agrega un registro **A** para `tive-test` con destino `72.60.228.221`. En el proxy que ya gestiona HTTPS en el VPS, añade un sitio para `tive-test.trackersystem.tech`, emite su certificado y dirige el tráfico a `http://127.0.0.1:4325`. Si cambiaste el puerto en Compose, usa el mismo en el proxy. Para NGINX en el host, esta es la configuración de la ubicación dentro del sitio HTTPS:
 
@@ -77,6 +77,8 @@ Comprueba que el panel pide autenticación y que el webhook devuelve `401` ante 
 curl -i https://tive-test.trackersystem.tech/
 curl -i -H 'Content-Type: application/json' -d '{}' https://tive-test.trackersystem.tech/api/webhooks/tive
 ```
+
+Si el VPS usa Dokploy con Traefik, crea un servicio **Docker Compose** con este repositorio y la ruta `./compose.production.yaml`. Introduce las variables de `.env.production.example` en **Environment** y asigna el dominio al servicio `app` en el puerto interno `4321` con HTTPS. Dokploy aplica la ruta del dominio al desplegar el servicio.
 
 ## Conexión con la plataforma Tive
 

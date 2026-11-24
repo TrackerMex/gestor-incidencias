@@ -9,5 +9,8 @@
 !scripts/migrate.mjs
 !db/
 !db/schema.sql
+!deploy/
+!deploy/postgres.Dockerfile
+!deploy/postgres-init.sql
 !tests/
 !tests/**
