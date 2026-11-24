@@ -1,0 +1,1581 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gestor Virtual de Incidencias | TRACKER MÉXICO GPS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <link rel="icon" type="image/png" href="https://i.postimg.cc/zJ26Ff39/A-VERDE.png">
+  <style>
+    :root{--bg0:#040814;--bg1:#081225;--bg2:#0e2147;--line:rgba(96,164,255,.16);--text:#eef6ff;--muted:#9db1d7;--cyan:#17d8ff;--blue:#5f86ff;--green:#45d58b;--yellow:#ffc857;--red:#ff647f;--radius-xl:28px;--shadow:0 24px 60px rgba(0,0,0,.38)}
+    *{box-sizing:border-box} html,body{margin:0;min-height:100%;font-family:'Inter',system-ui,sans-serif;color:var(--text)}
+    body{background:radial-gradient(circle at top center, rgba(24,80,180,.26), transparent 28%),radial-gradient(circle at 20% 20%, rgba(23,216,255,.07), transparent 18%),linear-gradient(180deg,#07101f 0%,#03060f 100%);padding:18px;overflow-x:hidden;position:relative}
+    body::before{content:"";position:fixed;inset:0;background-image:linear-gradient(rgba(23,216,255,.055) 1px, transparent 1px),linear-gradient(90deg, rgba(23,216,255,.055) 1px, transparent 1px);background-size:46px 46px;opacity:.22;pointer-events:none}
+    .shell{max-width:1600px;margin:0 auto;display:grid;gap:18px;position:relative;z-index:1}
+    .hero{border-radius:34px;border:1px solid var(--line);box-shadow:var(--shadow);overflow:hidden;padding:32px 28px 22px;background:radial-gradient(circle at top center, rgba(23,216,255,.12), transparent 42%),linear-gradient(180deg, rgba(8,19,42,.9), rgba(4,9,19,.96));position:relative}
+    .hero::before,.hero::after{content:"";position:absolute;border-radius:50%;filter:blur(22px);opacity:.24;pointer-events:none}.hero::before{width:280px;height:280px;right:-70px;top:-90px;background:radial-gradient(circle, rgba(23,216,255,.95), transparent 68%)}.hero::after{width:280px;height:280px;left:-90px;bottom:-120px;background:radial-gradient(circle, rgba(95,134,255,.95), transparent 68%)}
+    .hero-center{display:grid;justify-items:center;text-align:center;gap:14px}
+    .hero-logo-wrap{width:320px;height:320px;border-radius:44px;display:grid;place-items:center;padding:30px;position:relative;border:1px solid rgba(255,255,255,.08);background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));box-shadow:inset 0 0 0 1px rgba(255,255,255,.03), 0 0 0 14px rgba(23,216,255,.04)}
+    .hero-logo-wrap::before{content:"";position:absolute;inset:-18px;border-radius:58px;border:1px solid rgba(23,216,255,.12);animation:pulseRing 2.8s infinite ease-out}.hero-logo{width:100%;height:100%;object-fit:contain;display:block;animation:spinHorizontal 6s linear infinite;filter:drop-shadow(0 0 12px rgba(23,216,255,.18))}
+    h1{margin:0;font-size:clamp(2rem,3vw,3.3rem);line-height:1.02;letter-spacing:-.04em;text-shadow:0 0 22px rgba(23,216,255,.12)} .hero p{margin:0;color:var(--muted);max-width:920px;line-height:1.55;font-size:1rem}
+    .status-strip{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}.pill{min-height:42px;display:inline-flex;align-items:center;gap:9px;padding:10px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);white-space:nowrap}.pill .dot{width:10px;height:10px;border-radius:50%;background:var(--yellow);box-shadow:0 0 0 4px rgba(255,200,87,.12)}.pill.ok .dot{background:var(--green);box-shadow:0 0 0 4px rgba(69,213,139,.12)}.pill.critical .dot{background:var(--red);box-shadow:0 0 0 4px rgba(255,100,127,.15)}
+    .hero-toolbar{margin-top:20px;display:grid;grid-template-columns:repeat(12,1fr);gap:12px}.mini-panel{grid-column:span 3;min-height:82px;border-radius:18px;padding:13px 15px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);display:grid;align-content:center;gap:6px}.mini-panel small{color:var(--muted);font-size:.8rem;text-transform:uppercase;letter-spacing:.08em}.mini-panel strong{font-size:1rem;line-height:1.3}.mini-actions{grid-column:span 3;display:flex;justify-content:flex-end;align-items:center;gap:10px;flex-wrap:wrap}
+    .btn{border:1px solid rgba(255,255,255,.08);background:linear-gradient(180deg, rgba(95,134,255,.19), rgba(13,21,41,.9));color:var(--text);border-radius:14px;padding:11px 16px;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.05);transition:transform .16s ease, filter .16s ease}.btn:hover{transform:translateY(-1px);filter:brightness(1.06)}.btn.secondary{background:rgba(255,255,255,.05)}.btn.success{background:linear-gradient(180deg, rgba(69,213,139,.22), rgba(17,58,39,.92))}.btn.danger{background:linear-gradient(180deg, rgba(255,100,127,.24), rgba(74,18,31,.94));border-color:rgba(255,100,127,.28)}
+    .alarm-strip{display:flex;align-items:center;gap:14px;padding:13px 16px;position:relative;overflow:hidden;border-radius:18px;border:1px solid rgba(255,100,127,.15);background:linear-gradient(90deg, rgba(255,100,127,.12), rgba(255,155,74,.08), rgba(255,100,127,.12))}.alarm-strip::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg, transparent, rgba(255,255,255,.08), transparent);transform:translateX(-100%);animation:sweep 4.2s linear infinite;pointer-events:none}.alarm-label{font-size:.82rem;letter-spacing:.08em;text-transform:uppercase;color:#ffd7df;font-weight:800}.alarm-text{color:#ffe8ed;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+    .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}.kpi{position:relative;overflow:hidden;min-height:138px;display:flex;flex-direction:column;justify-content:space-between;border-radius:24px;border:1px solid var(--line);box-shadow:var(--shadow);padding:18px;background:linear-gradient(180deg, rgba(10,18,36,.94), rgba(7,12,24,.96))}.kpi::before{content:"";position:absolute;left:0;top:0;width:100%;height:4px;background:linear-gradient(90deg, rgba(23,216,255,.15), rgba(95,134,255,.66), rgba(23,216,255,.15))}.kpi label{display:block;font-size:.87rem;color:var(--muted)}.kpi .value{font-size:clamp(2rem,3vw,2.9rem);font-weight:800;line-height:1;letter-spacing:-.04em}.kpi footer{color:var(--muted);font-size:.9rem}.kpi.critical .value{color:var(--red)} .kpi.relevant .value{color:var(--yellow)} .kpi.normal .value{color:var(--cyan)} .kpi.closed .value{color:var(--green)}
+    .panel{border-radius:var(--radius-xl);border:1px solid var(--line);box-shadow:var(--shadow);padding:18px;position:relative;overflow:hidden;background:linear-gradient(180deg, rgba(9,17,35,.92), rgba(5,9,20,.96))}.panel::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at top right, rgba(23,216,255,.06), transparent 28%);pointer-events:none}.panel-header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:14px}.panel-title{margin:0;font-size:1.45rem;letter-spacing:-.03em}.panel-subtitle{margin:4px 0 0;color:var(--muted);font-size:.95rem}
+    .incident-layout{display:grid;grid-template-columns:1fr 1.05fr;gap:16px}.info-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.info-card{border-radius:18px;border:1px solid rgba(255,255,255,.08);padding:14px;min-height:96px;background:linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.018))}.info-card.full{grid-column:1/-1}.info-card small{display:block;color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}.info-card strong{display:block;font-size:1.02rem;line-height:1.35}
+    .notes-box{display:grid;gap:10px}.notes-box textarea{width:100%;min-height:130px;resize:vertical;padding:12px 14px;border-radius:16px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:var(--text);outline:none;font:inherit}.notes-meta{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:.85rem}
+    .badge{display:inline-flex;align-items:center;gap:8px;width:fit-content;padding:8px 12px;border-radius:999px;font-size:.84rem;font-weight:800;border:1px solid transparent;letter-spacing:.03em}.badge.CRITICA{background:rgba(255,100,127,.16);color:#ffdce4;border-color:rgba(255,100,127,.22)}.badge.RELEVANTE{background:rgba(255,200,87,.16);color:#ffebc0;border-color:rgba(255,200,87,.22)}.badge.ORDINARIA,.badge.SIN_CLASIFICAR{background:rgba(23,216,255,.12);color:#d8faff;border-color:rgba(23,216,255,.22)}.badge.SIN_CERRAR{background:rgba(95,134,255,.16);color:#dbe6ff;border-color:rgba(95,134,255,.24)}.badge.CERRADO{background:rgba(69,213,139,.16);color:#dfffee;border-color:rgba(69,213,139,.24)}
+    .map-stack{display:grid;gap:12px}.map-card{min-height:100%;display:grid;gap:10px}.map-wrap{min-height:430px;border-radius:20px;overflow:hidden;position:relative;border:1px solid rgba(255,255,255,.08);background:#eef2f7}#eventMap{width:100%;height:100%;min-height:430px;z-index:1}.map-empty{position:absolute;inset:0;display:grid;place-items:center;padding:20px;text-align:center;color:#334155;background:radial-gradient(circle at center, rgba(23,216,255,.08), transparent 45%);z-index:2;pointer-events:none}.map-caption{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:.92rem}.map-caption strong{color:var(--text)}
+    .voice-log{display:grid;gap:10px;max-height:280px;overflow:auto;padding-right:4px}.voice-item{border-radius:16px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.04);padding:12px 14px;display:grid;gap:6px}.voice-item small{color:var(--muted)}
+    .controls-bar{display:grid;grid-template-columns:repeat(12,1fr);gap:12px;margin-top:10px}.controls-card{grid-column:span 4;border-radius:18px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);padding:14px}.controls-card small{display:block;color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}.tabs{display:inline-flex;gap:4px;padding:4px;border-radius:14px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04)}.tab{border:none;background:transparent;color:var(--muted);border-radius:10px;padding:10px 14px;cursor:pointer;font-weight:700}.tab.active{background:linear-gradient(180deg, rgba(23,216,255,.16), rgba(95,134,255,.16));color:var(--text)}
+    .filter-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:8px}.field{display:grid;gap:8px}.field label{color:var(--muted);font-size:.82rem}.control{width:100%;min-height:44px;padding:10px 12px;border-radius:14px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:var(--text);outline:none}.control option{color:#111 !important;background:#fff !important}
+    .table-wrap{margin-top:14px;border-radius:20px;overflow:hidden;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.02)}table{width:100%;border-collapse:collapse}thead{background:rgba(255,255,255,.04)}th,td{text-align:left;padding:12px 12px;border-bottom:1px solid rgba(255,255,255,.06);font-size:.92rem;vertical-align:top}th{color:var(--muted);font-size:.8rem;text-transform:uppercase;letter-spacing:.06em}tbody tr{cursor:pointer;transition:background .12s ease}tbody tr:hover{background:rgba(255,255,255,.04)}tbody tr.active-row{background:rgba(95,134,255,.12)}.row-close-btn{width:38px;height:38px;display:inline-grid;place-items:center;border-radius:12px;border:1px solid rgba(69,213,139,.22);background:linear-gradient(180deg, rgba(69,213,139,.18), rgba(17,58,39,.92));color:var(--text);cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.05);font-size:1rem;font-weight:800}
+    .footer-note{text-align:center;color:var(--muted);font-size:.88rem;padding:6px 0 10px}
+    .app-nav{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;padding:8px;border-radius:18px;border:1px solid var(--line);background:rgba(255,255,255,.035);box-shadow:var(--shadow)}
+    .app-nav-btn{border:none;cursor:pointer;border-radius:12px;padding:11px 18px;font-weight:800;color:var(--muted);background:transparent}
+    .app-nav-btn.active{color:var(--text);background:linear-gradient(180deg,rgba(23,216,255,.16),rgba(95,134,255,.16));box-shadow:inset 0 0 0 1px rgba(23,216,255,.12)}
+    .analytics-section{display:none}.analytics-section.active{display:block}
+    .analytics-kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px}
+    .analytics-kpi{border-radius:20px;border:1px solid var(--line);background:rgba(255,255,255,.035);padding:16px;min-height:112px;display:flex;flex-direction:column;justify-content:space-between}
+    .analytics-kpi small{color:var(--muted);text-transform:uppercase;letter-spacing:.07em;font-size:.76rem}
+    .analytics-kpi strong{font-size:2rem;line-height:1;font-weight:800}
+    .analytics-kpi{position:relative;overflow:hidden;box-shadow:inset 0 1px 0 rgba(255,255,255,.035)}
+    .analytics-kpi::before{content:"";position:absolute;left:0;right:0;top:0;height:4px;background:var(--kpi-accent,rgba(23,216,255,.55))}
+    .analytics-kpi::after{content:"";position:absolute;width:120px;height:120px;border-radius:50%;right:-48px;bottom:-58px;background:radial-gradient(circle,var(--kpi-glow,rgba(23,216,255,.16)),transparent 70%);pointer-events:none}
+    .analytics-kpi strong{position:relative;z-index:1;text-shadow:0 0 18px var(--kpi-glow,rgba(23,216,255,.12))}
+    .analytics-kpi small{position:relative;z-index:1}
+    .analytics-kpi.kpi-total{--kpi-accent:#17d8ff;--kpi-glow:rgba(23,216,255,.22);background:linear-gradient(180deg,rgba(23,216,255,.09),rgba(255,255,255,.025))}
+    .analytics-kpi.kpi-critical{--kpi-accent:#ff647f;--kpi-glow:rgba(255,100,127,.24);background:linear-gradient(180deg,rgba(255,100,127,.10),rgba(255,255,255,.025))}
+    .analytics-kpi.kpi-relevant{--kpi-accent:#ffc857;--kpi-glow:rgba(255,200,87,.22);background:linear-gradient(180deg,rgba(255,200,87,.09),rgba(255,255,255,.025))}
+    .analytics-kpi.kpi-ordinary{--kpi-accent:#5f86ff;--kpi-glow:rgba(95,134,255,.22);background:linear-gradient(180deg,rgba(95,134,255,.09),rgba(255,255,255,.025))}
+    .analytics-kpi.kpi-closed{--kpi-accent:#45d58b;--kpi-glow:rgba(69,213,139,.22);background:linear-gradient(180deg,rgba(69,213,139,.09),rgba(255,255,255,.025))}
+    .analytics-kpi.kpi-attention{--kpi-accent:#a78bfa;--kpi-glow:rgba(167,139,250,.22);background:linear-gradient(180deg,rgba(167,139,250,.09),rgba(255,255,255,.025))}
+    .analytics-kpi.kpi-monitored{--kpi-accent:#38bdf8;--kpi-glow:rgba(56,189,248,.20);background:linear-gradient(180deg,rgba(56,189,248,.08),rgba(255,255,255,.025))}
+    .analytics-kpi.kpi-affected{--kpi-accent:#fb923c;--kpi-glow:rgba(251,146,60,.22);background:linear-gradient(180deg,rgba(251,146,60,.09),rgba(255,255,255,.025))}
+    .analytics-kpi.kpi-clean{--kpi-accent:#34d399;--kpi-glow:rgba(52,211,153,.22);background:linear-gradient(180deg,rgba(52,211,153,.08),rgba(255,255,255,.025))}
+    .analytics-kpi.kpi-repeat{--kpi-accent:#f472b6;--kpi-glow:rgba(244,114,182,.22);background:linear-gradient(180deg,rgba(244,114,182,.08),rgba(255,255,255,.025))}
+
+    .analytics-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:16px}
+    .analytics-card{border-radius:20px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);padding:16px;min-height:320px}
+    .analytics-card.full{grid-column:1/-1}.analytics-card h3{margin:0 0 4px;font-size:1.05rem}.analytics-card p{margin:0 0 12px;color:var(--muted);font-size:.86rem}
+    .chart-wrap{position:relative;height:290px}.ranking-list{display:grid;gap:8px;max-height:290px;overflow:auto}
+    .ranking-row{display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.04);box-shadow:inset 0 1px 0 rgba(255,255,255,.03)}
+    .ranking-row .rank{color:var(--rank-accent,var(--cyan));font-weight:800;text-shadow:0 0 12px color-mix(in srgb, var(--rank-accent,var(--cyan)) 28%, transparent)}
+    .ranking-row .value{font-weight:800;color:var(--rank-accent,var(--text))}
+    .ranking-row small{color:rgba(255,255,255,.85)}
+    .analytics-filters{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin-bottom:14px}.analytics-filters .field{min-width:180px}
+
+    @keyframes sweep{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}} @keyframes pulseRing{0%{transform:scale(.92);opacity:.65}70%{transform:scale(1.08);opacity:.08}100%{transform:scale(1.12);opacity:0}}@keyframes spinHorizontal{0%{transform:rotateY(0deg)}100%{transform:rotateY(360deg)}}
+    @media (max-width:1320px){.kpis{grid-template-columns:repeat(3,1fr)}.hero-toolbar,.controls-bar{grid-template-columns:repeat(2,1fr)}.mini-panel,.mini-actions,.controls-card{grid-column:span 1}.incident-layout{grid-template-columns:1fr}}
+    @media (max-width:980px){.hero-toolbar,.controls-bar,.filter-grid{grid-template-columns:1fr}.mini-panel,.mini-actions,.controls-card{grid-column:span 1}.analytics-grid{grid-template-columns:1fr}.analytics-card.full{grid-column:auto}.analytics-kpis{grid-template-columns:1fr 1fr}}
+    @media (max-width:760px){body{padding:12px}.hero{padding:22px 16px 18px;border-radius:24px}.hero-logo-wrap{width:220px;height:220px;padding:20px}.kpis{grid-template-columns:1fr 1fr}.info-grid{grid-template-columns:1fr}.table-wrap{overflow-x:auto}table{min-width:880px}.map-wrap,#eventMap{min-height:320px}}
+    @media (max-width:560px){.kpis{grid-template-columns:1fr}.status-strip,.mini-actions{justify-content:center}.mini-actions .btn{flex:1 1 auto}.alarm-strip{flex-direction:column;align-items:flex-start}}
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <section class="hero">
+      <div class="hero-center">
+        <div class="hero-logo-wrap"><img class="hero-logo" src="https://i.postimg.cc/zJ26Ff39/A-VERDE.png" alt="Isotipo TRACKER MÉXICO GPS"></div>
+        <div><h1>Gestor Virtual de Incidencias</h1><p>Centro de monitoreo inteligente para detectar, anunciar, clasificar y atender incidencias de flota en tiempo real</p></div>
+        <div class="status-strip">
+          <div class="pill" id="apiStatusPill"><span class="dot"></span><span id="apiStatusText">API verificando...</span></div>
+          <div class="pill" id="voiceStatusPill"><span class="dot"></span><span id="voiceStatusText">Voz activándose...</span></div>
+          <div class="pill ok"><span class="dot"></span><span id="lastUpdateText">Última actualización: --</span></div>
+        </div>
+      </div>
+      <div class="hero-toolbar">
+        <div class="mini-panel"><small>Fuente de datos</small><span class="muted">API Wialon Node.js</span></div>
+        <div class="mini-panel"><small>Cliente referencia</small><strong id="clientRefText">Bussines Agora · ID 402250914</strong><span id="tabModeText" style="display:none;">Pendientes</span></div>
+        <div class="mini-panel"><small>Voz seleccionada</small><strong id="voiceNameText">Detectando voces...</strong><select id="voiceSelect" class="control" style="margin-top:4px;"><option value="">Predeterminada</option></select></div>
+        <div class="mini-actions"><button class="btn secondary" id="toggleVoiceBtn">Silenciar voz</button><button class="btn secondary" id="testVoiceBtn">Probar voz</button><button class="btn" id="refreshBtn">Actualizar</button></div>
+      </div>
+    </section>
+
+    <nav class="app-nav" id="appNav">
+      <button class="app-nav-btn active" data-view="monitor">Monitoreo</button>
+      <button class="app-nav-btn" data-view="analytics">Analítica</button>
+      <button class="app-nav-btn" data-view="history">Histórico</button>
+    </nav>
+
+    <div class="alarm-strip" id="monitorAlarmSection"><div class="alarm-label">Señal operativa</div><div class="alarm-text" id="alarmText">Esperando incidencias críticas o relevantes...</div></div>
+
+    <section class="kpis" id="monitorKpisSection">
+      <article class="kpi"><label>Incidencias pendientes</label><div class="value" id="kpiPendientes">0</div><footer>Eventos activos en seguimiento.</footer></article>
+      <article class="kpi critical"><label>Críticas</label><div class="value" id="kpiCriticas">0</div><footer>Intervención inmediata.</footer></article>
+      <article class="kpi relevant"><label>Relevantes</label><div class="value" id="kpiRelevantes">0</div><footer>Riesgo operativo elevado.</footer></article>
+      <article class="kpi normal"><label>Ordinarias</label><div class="value" id="kpiOrdinarias">0</div><footer>Validación y seguimiento.</footer></article>
+      <article class="kpi closed"><label>Cerradas</label><div class="value" id="kpiCerradas">0</div><footer>Historial resuelto.</footer></article>
+    </section>
+
+    <section class="panel" id="activeIncidentSection">
+      <div class="panel-header">
+        <div><h2 class="panel-title">Incidencia activa</h2><p class="panel-subtitle">Vista protagonista con localización, severidad, contexto operativo y protocolo recomendado.</p></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;"><button class="btn secondary" id="markAttentionBtn">Marcar sin cerrar</button><button class="btn success" id="markClosedBtn">Marcar cerrado</button></div>
+      </div>
+      <div class="incident-layout">
+        <div class="info-grid">
+          <div class="info-card"><small>Unidad</small><strong id="activeUnidad">Sin selección</strong></div>
+          <div class="info-card"><small>Criticidad</small><div id="activeSeveridadWrap"><span class="badge SIN_CLASIFICAR">SIN CLASIFICAR</span></div></div>
+          <div class="info-card"><small>Evento</small><strong id="activeEvento">--</strong></div>
+          <div class="info-card"><small>Tipo de incidencia</small><strong id="activeTipo">--</strong></div>
+          <div class="info-card"><small>Fecha</small><strong id="activeFecha">--</strong></div>
+          <div class="info-card"><small>Hora</small><strong id="activeHora">--</strong></div>
+          <div class="info-card full"><small>Ubicación</small><strong id="activeUbicacion">--</strong></div>
+          <div class="info-card"><small>Estatus</small><div id="activeStatusWrap"><span class="badge SIN_CERRAR">SIN CERRAR</span></div></div>
+          <div class="info-card"><small>ID incidencia</small><strong id="activeId">--</strong></div>
+          <div class="info-card full"><small>Protocolo sugerido</small><strong id="activeProtocolo">Seleccione una incidencia para ver la recomendación operativa.</strong></div>
+          <div class="info-card full">
+            <small>Observaciones del monitorista</small>
+            <div class="notes-box">
+              <textarea id="monitorNotes" placeholder="Escriba aquí el resultado de la validación, contactos realizados, hallazgos y acciones tomadas respecto a la incidencia seleccionada..."></textarea>
+              <div class="notes-meta">
+                <span id="notesStatusText">Sin observaciones guardadas para esta incidencia.</span>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                  <button class="btn secondary" id="clearNotesBtn">Limpiar</button>
+                  <button class="btn success" id="saveNotesBtn">Guardar observación</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="map-stack">
+          <div class="map-card">
+            <div class="map-wrap"><div id="eventMap"></div><div class="map-empty" id="mapEmpty">Sin coordenadas en la incidencia activa.</div></div>
+            <div class="map-caption"><span>Coordenadas: <strong id="mapCoords">--</strong></span><span>Velocidad: <strong id="mapSpeed">--</strong></span></div>
+          </div>
+          <div class="panel" style="padding:14px;">
+            <div class="panel-header" style="margin-bottom:10px;"><div><h2 class="panel-title" style="font-size:1.1rem;">Bitácora de voz</h2><p class="panel-subtitle">Anuncios recientes.</p></div></div>
+            <div class="voice-log" id="voiceLog"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="incidentsListSection">
+      <div class="panel-header"><div><h2 class="panel-title">Listado de incidencias</h2><p class="panel-subtitle">Filtros, consulta histórica y selección de incidencia activa.</p></div><div id="tableCounter">0 registros</div></div>
+      <div class="controls-bar">
+        <div class="controls-card"><small>Vista</small><div class="tabs" id="tabsWrap"><button class="tab active" data-tab="pendientes">Pendientes</button><button class="tab" data-tab="historial">Histórico</button></div></div>
+        <div class="controls-card"><small>Notificaciones de voz</small><select id="voiceSeverityFilter" class="control"><option value="ALL">Todas</option><option value="CRITICA">Solo críticas</option><option value="CRITICA_RELEVANTE">Críticas y relevantes</option></select></div>
+        <div class="controls-card"><small>Buscar</small><input id="searchInput" class="control" type="text" placeholder="Unidad, evento, ubicación, ID..." /></div>
+        <div class="controls-card"><small>Acciones</small><div style="display:grid;gap:10px;"><button class="btn secondary" id="clearFiltersBtn" style="width:100%;">Limpiar filtros</button><button class="btn" id="exportExcelBtn" style="width:100%;">Exportar Excel</button><button class="btn danger" id="deleteVisibleBtn" style="width:100%;">Borrar registros en pantalla</button></div></div>
+      </div>
+      <div class="filter-grid">
+        <div class="field"><label for="severityFilter">Criticidad</label><select id="severityFilter" class="control"><option value="">Todas</option><option value="CRITICA">Crítica</option><option value="RELEVANTE">Relevante</option><option value="ORDINARIA">Ordinaria</option></select></div>
+        <div class="field"><label for="statusFilter">Estatus</label><select id="statusFilter" class="control"><option value="">Todos</option><option value="SIN_CERRAR">Sin cerrar</option><option value="CERRADO">Cerrado</option></select></div>
+        <div class="field"><label for="unitFilter">Unidad</label><select id="unitFilter" class="control"><option value="">Todas</option></select></div>
+        <div class="field"><label for="typeFilter">Tipo</label><select id="typeFilter" class="control"><option value="">Todos</option></select></div>
+        <div class="field"><label for="fromFilter">Desde</label><input id="fromFilter" class="control" type="date" /></div>
+        <div class="field"><label for="toFilter">Hasta</label><input id="toFilter" class="control" type="date" /></div>
+      </div>
+      <div class="table-wrap"><table><thead><tr><th>ID</th><th>Fecha</th><th>Unidad</th><th>Evento</th><th>Tipo</th><th>Severidad</th><th>Estatus</th><th>Ubicación</th><th>Acción</th></tr></thead><tbody id="incidentsTableBody"><tr><td colspan="9">Cargando incidencias...</td></tr></tbody></table></div>
+    </section>
+
+
+    <section class="panel analytics-section" id="analyticsSection">
+      <div class="panel-header">
+        <div>
+          <h2 class="panel-title">Analítica de incidencias</h2>
+          <p class="panel-subtitle">Comportamiento numérico, tendencias y concentración de incidencias durante el período seleccionado.</p>
+        </div>
+      </div>
+
+      <div class="analytics-filters">
+        <div class="field">
+          <label for="analyticsPeriod">Período</label>
+          <select id="analyticsPeriod" class="control">
+            <option value="today">Hoy</option>
+            <option value="24h">Últimas 24 horas</option>
+            <option value="7d">Últimos 7 días</option>
+            <option value="custom">Personalizado</option>
+          </select>
+        </div>
+        <div class="field" id="analyticsFromWrap" style="display:none;"><label for="analyticsFrom">Desde</label><input id="analyticsFrom" type="date" class="control"></div>
+        <div class="field" id="analyticsToWrap" style="display:none;"><label for="analyticsTo">Hasta</label><input id="analyticsTo" type="date" class="control"></div>
+        <button class="btn" id="analyticsRefreshBtn">Actualizar analítica</button>
+      </div>
+
+      <div class="analytics-kpis">
+        <div class="analytics-kpi kpi-total"><small>Total incidencias</small><strong id="anTotal">0</strong></div>
+        <div class="analytics-kpi kpi-critical"><small>Críticas</small><strong id="anCritical">0</strong></div>
+        <div class="analytics-kpi kpi-relevant"><small>Relevantes</small><strong id="anRelevant">0</strong></div>
+        <div class="analytics-kpi kpi-ordinary"><small>Ordinarias</small><strong id="anOrdinary">0</strong></div>
+        <div class="analytics-kpi kpi-closed"><small>Cerradas</small><strong id="anClosed">0</strong></div>
+        <div class="analytics-kpi kpi-attention"><small>Tasa de atención</small><strong id="anAttentionRate">0%</strong></div>
+        <div class="analytics-kpi kpi-monitored"><small>Unidades monitoreadas</small><strong id="anMonitoredUnits">0</strong></div>
+        <div class="analytics-kpi kpi-affected"><small>Con incidencias</small><strong id="anAffectedUnits">0</strong></div>
+        <div class="analytics-kpi kpi-clean"><small>Sin incidencias</small><strong id="anCleanUnits">0</strong></div>
+        <div class="analytics-kpi kpi-repeat"><small>Unidades reincidentes</small><strong id="anRepeatUnits">0</strong></div>
+      </div>
+
+      <div class="analytics-grid">
+        <div class="analytics-card full">
+          <h3>Incidencias por tipo</h3><p>Comparativo de los episodios operativos generados en el período.</p>
+          <div class="chart-wrap"><canvas id="chartIncidentTypes"></canvas></div>
+        </div>
+        <div class="analytics-card">
+          <h3>Evolución por hora</h3><p>Concentración temporal de incidencias durante el día.</p>
+          <div class="chart-wrap"><canvas id="chartHourly"></canvas></div>
+        </div>
+        <div class="analytics-card">
+          <h3>Distribución por severidad</h3><p>Participación de incidencias críticas, relevantes y ordinarias.</p>
+          <div class="chart-wrap"><canvas id="chartSeverity"></canvas></div>
+        </div>
+        <div class="analytics-card">
+          <h3>Top 10 unidades</h3><p>Unidades con mayor número de incidencias en el período.</p>
+          <div class="ranking-list" id="analyticsTopUnits"></div>
+        </div>
+        <div class="analytics-card">
+          <h3>Unidades reincidentes</h3><p>Unidades con múltiples incidencias del mismo tipo.</p>
+          <div class="ranking-list" id="analyticsRepeatUnitsList"></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="footer-note">Gestor Virtual de Incidencias · TRACKER MÉXICO GPS · Centro de Monitoreo Inteligente</div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script>
+    (function(){
+      /* =========================================================
+         CONFIGURACIÓN DE CONEXIÓN WIALON / NODE.JS
+         Cliente de referencia: Empacadora Campo Frío | ID 401202762
+         Ajuste únicamente WIALON_API_BASE si el dominio final cambia.
+      ========================================================= */
+      // =========================================================
+      // CONFIGURACIÓN DEL CLIENTE FIJO DE ESTA INSTANCIA
+      // Para crear otra versión dedicada, cambie únicamente:
+      //   1. nombre
+      //   2. resourceId
+      // Ejemplo TRANS GAT:
+      // nombre: 'TRANS GAT LOGISTICS'
+      // resourceId: 'ID_DEL_RECURSO_WIALON'
+      // =========================================================
+      const CLIENTE_CONFIG = Object.freeze({
+        nombre: 'Bussines Agora',
+        resourceId: '402250914',
+        diasConsulta: 1, // respaldo; la consulta real usa de 00:00 a 23:59 del día actual
+        refrescoMs: 60000
+      });
+
+      // Alias interno para conservar compatibilidad con el resto del código.
+      const WIALON_CLIENT = {
+        nombre: CLIENTE_CONFIG.nombre,
+        id: CLIENTE_CONFIG.resourceId
+      };
+
+      const WIALON_API_BASE = 'https://combustible.trackersystem.tech';
+      const API_TOKEN = 'prueba123';
+      const REFRESH_MS = CLIENTE_CONFIG.refrescoMs;
+
+      // Sonidos especiales por tipo de incidencia.
+      // Los MP3 de policía y tornado deben permanecer en la misma carpeta que este HTML.
+      const INCIDENT_ALERT_SOUNDS = {
+        routeDeviation: 'https://files.catbox.moe/h3c039.MP3',
+        panic: 'freesound_community-police-6007.mp3',
+        forbiddenStop: 'pwlpl-tornado-warning-siren-sound-effect-359252.mp3'
+      };
+
+      // El listado se obtiene exclusivamente del endpoint multicliente real.
+      const WIALON_ENDPOINTS = {
+        list: [
+          '/api/wialon/incidencias'
+        ],
+        status: [
+          '/api/wialon/incidencias/status',
+          '/api/incidencias/status'
+        ]
+      };
+      const FALLBACK_COORDS = [19.4326, -99.1332];
+      const NOTES_KEY = `tracker_monitor_notes_v1:${CLIENTE_CONFIG.resourceId}`;
+      const DATA_CACHE_KEY = `tracker_incidents_cache_v1:${CLIENTE_CONFIG.resourceId}`;
+      const DELETED_KEY = `tracker_incidents_deleted_v1:${CLIENTE_CONFIG.resourceId}`;
+      const STATUS_KEY = `tracker_incidents_status_v1:${CLIENTE_CONFIG.resourceId}`;
+      const ADDRESS_CACHE_KEY = `tracker_reverse_geocode_v1:${CLIENTE_CONFIG.resourceId}`;
+      const state = {tab:'pendientes',appView:'monitor',allRows:[],rows:[],activeIncident:null,voiceEnabled:true,speaking:false,announcedIds:new Set(),availableVoices:[],selectedVoiceURI:'',voiceSeverityFilter:'ALL',map:null,mapMarker:null,lastSpeechAt:0,notesStore:{},deletedIds:new Set(),statusStore:{},addressCache:{},geocodeRequestId:0,alertAudio:null,lastAlertSoundKey:'',analyticsCharts:{},totalMonitoredUnits:0};
+      let audioCtx = null;
+      let voiceReady = false;
+
+      const el = {
+        clientRefText:document.getElementById('clientRefText'),apiStatusPill:document.getElementById('apiStatusPill'),apiStatusText:document.getElementById('apiStatusText'),voiceStatusPill:document.getElementById('voiceStatusPill'),voiceStatusText:document.getElementById('voiceStatusText'),lastUpdateText:document.getElementById('lastUpdateText'),tabModeText:document.getElementById('tabModeText'),alarmText:document.getElementById('alarmText'),voiceSelect:document.getElementById('voiceSelect'),voiceNameText:document.getElementById('voiceNameText'),voiceSeverityFilter:document.getElementById('voiceSeverityFilter'),kpiPendientes:document.getElementById('kpiPendientes'),kpiCriticas:document.getElementById('kpiCriticas'),kpiRelevantes:document.getElementById('kpiRelevantes'),kpiOrdinarias:document.getElementById('kpiOrdinarias'),kpiCerradas:document.getElementById('kpiCerradas'),activeUnidad:document.getElementById('activeUnidad'),activeSeveridadWrap:document.getElementById('activeSeveridadWrap'),activeEvento:document.getElementById('activeEvento'),activeTipo:document.getElementById('activeTipo'),activeFecha:document.getElementById('activeFecha'),activeHora:document.getElementById('activeHora'),activeUbicacion:document.getElementById('activeUbicacion'),activeStatusWrap:document.getElementById('activeStatusWrap'),activeId:document.getElementById('activeId'),activeProtocolo:document.getElementById('activeProtocolo'),mapEmpty:document.getElementById('mapEmpty'),mapCoords:document.getElementById('mapCoords'),mapSpeed:document.getElementById('mapSpeed'),tabsWrap:document.getElementById('tabsWrap'),searchInput:document.getElementById('searchInput'),severityFilter:document.getElementById('severityFilter'),statusFilter:document.getElementById('statusFilter'),unitFilter:document.getElementById('unitFilter'),typeFilter:document.getElementById('typeFilter'),fromFilter:document.getElementById('fromFilter'),toFilter:document.getElementById('toFilter'),clearFiltersBtn:document.getElementById('clearFiltersBtn'),exportExcelBtn:document.getElementById('exportExcelBtn'),deleteVisibleBtn:document.getElementById('deleteVisibleBtn'),incidentsTableBody:document.getElementById('incidentsTableBody'),tableCounter:document.getElementById('tableCounter'),voiceLog:document.getElementById('voiceLog'),toggleVoiceBtn:document.getElementById('toggleVoiceBtn'),testVoiceBtn:document.getElementById('testVoiceBtn'),refreshBtn:document.getElementById('refreshBtn'),markAttentionBtn:document.getElementById('markAttentionBtn'),markClosedBtn:document.getElementById('markClosedBtn'),monitorNotes:document.getElementById('monitorNotes'),saveNotesBtn:document.getElementById('saveNotesBtn'),clearNotesBtn:document.getElementById('clearNotesBtn'),notesStatusText:document.getElementById('notesStatusText'),
+        appNav:document.getElementById('appNav'),analyticsSection:document.getElementById('analyticsSection'),
+        monitorAlarmSection:document.getElementById('monitorAlarmSection'),monitorKpisSection:document.getElementById('monitorKpisSection'),
+        activeIncidentSection:document.getElementById('activeIncidentSection'),incidentsListSection:document.getElementById('incidentsListSection'),
+        analyticsPeriod:document.getElementById('analyticsPeriod'),analyticsFrom:document.getElementById('analyticsFrom'),analyticsTo:document.getElementById('analyticsTo'),
+        analyticsFromWrap:document.getElementById('analyticsFromWrap'),analyticsToWrap:document.getElementById('analyticsToWrap'),
+        analyticsRefreshBtn:document.getElementById('analyticsRefreshBtn'),analyticsTopUnits:document.getElementById('analyticsTopUnits'),
+        analyticsRepeatUnitsList:document.getElementById('analyticsRepeatUnitsList'),anTotal:document.getElementById('anTotal'),
+        anCritical:document.getElementById('anCritical'),anRelevant:document.getElementById('anRelevant'),anOrdinary:document.getElementById('anOrdinary'),
+        anClosed:document.getElementById('anClosed'),anAttentionRate:document.getElementById('anAttentionRate'),
+        anMonitoredUnits:document.getElementById('anMonitoredUnits'),anAffectedUnits:document.getElementById('anAffectedUnits'),
+        anCleanUnits:document.getElementById('anCleanUnits'),anRepeatUnits:document.getElementById('anRepeatUnits')
+      };
+
+      function obtenerRangoDiaActual(){
+        const ahora = new Date();
+        const inicio = new Date(
+          ahora.getFullYear(),
+          ahora.getMonth(),
+          ahora.getDate(),
+          0, 0, 0, 0
+        );
+        const fin = new Date(
+          ahora.getFullYear(),
+          ahora.getMonth(),
+          ahora.getDate(),
+          23, 59, 59, 999
+        );
+
+        return {
+          fecha: [
+            ahora.getFullYear(),
+            String(ahora.getMonth()+1).padStart(2,'0'),
+            String(ahora.getDate()).padStart(2,'0')
+          ].join('-'),
+          timeFrom: Math.floor(inicio.getTime()/1000),
+          timeTo: Math.floor(fin.getTime()/1000)
+        };
+      }
+
+      function aplicarFechaActualAFiltros(){
+        const rango = obtenerRangoDiaActual();
+        if(el.fromFilter && !el.fromFilter.value){
+          el.fromFilter.value = rango.fecha;
+        }
+        if(el.toFilter && !el.toFilter.value){
+          el.toFilter.value = rango.fecha;
+        }
+      }
+
+      function loadAddressCache(){
+        try{
+          state.addressCache=
+            JSON.parse(localStorage.getItem(ADDRESS_CACHE_KEY)||'{}')||{};
+        }catch(e){
+          state.addressCache={};
+        }
+      }
+
+      function persistAddressCache(){
+        try{
+          localStorage.setItem(
+            ADDRESS_CACHE_KEY,
+            JSON.stringify(state.addressCache)
+          );
+        }catch(e){
+          console.warn('No fue posible guardar la caché de direcciones:',e);
+        }
+      }
+
+      function addressCacheKey(lat,lon){
+        return `${Number(lat).toFixed(5)},${Number(lon).toFixed(5)}`;
+      }
+
+      async function obtenerDireccionLiteral(lat,lon){
+        const key=addressCacheKey(lat,lon);
+
+        if(state.addressCache[key]){
+          return state.addressCache[key];
+        }
+
+        const intentos=[
+          async ()=>{
+            const url=
+              'https://nominatim.openstreetmap.org/reverse' +
+              `?format=jsonv2&lat=${encodeURIComponent(lat)}` +
+              `&lon=${encodeURIComponent(lon)}` +
+              '&zoom=18&addressdetails=1&accept-language=es';
+
+            const response=await fetch(url,{
+              method:'GET',
+              mode:'cors',
+              headers:{'Accept':'application/json'}
+            });
+
+            if(!response.ok){
+              throw new Error(`Nominatim HTTP ${response.status}`);
+            }
+
+            const data=await response.json();
+            const direccion=String(data?.display_name||'').trim();
+
+            if(!direccion){
+              throw new Error('Nominatim no devolvió dirección.');
+            }
+
+            return direccion;
+          },
+
+          async ()=>{
+            const url=
+              'https://api.bigdatacloud.net/data/reverse-geocode-client' +
+              `?latitude=${encodeURIComponent(lat)}` +
+              `&longitude=${encodeURIComponent(lon)}` +
+              '&localityLanguage=es';
+
+            const response=await fetch(url,{
+              method:'GET',
+              mode:'cors',
+              headers:{'Accept':'application/json'}
+            });
+
+            if(!response.ok){
+              throw new Error(`BigDataCloud HTTP ${response.status}`);
+            }
+
+            const data=await response.json();
+
+            const partes=[
+              data?.locality,
+              data?.city,
+              data?.principalSubdivision,
+              data?.postcode,
+              data?.countryName
+            ].filter(Boolean);
+
+            const direccion=partes.join(', ');
+
+            if(!direccion){
+              throw new Error('BigDataCloud no devolvió dirección.');
+            }
+
+            return direccion;
+          }
+        ];
+
+        let ultimoError=null;
+
+        for(const intento of intentos){
+          try{
+            const direccion=await intento();
+            if(direccion){
+              state.addressCache[key]=direccion;
+              persistAddressCache();
+              return direccion;
+            }
+          }catch(e){
+            ultimoError=e;
+            console.warn('Proveedor de geocodificación no disponible:',e);
+          }
+        }
+
+        throw ultimoError || new Error('No fue posible obtener la dirección literal.');
+      }
+
+      async function completarDireccionIncidencia(inc){
+        if(!inc) return;
+
+        const lat=parseFloat(inc.latitud);
+        const lon=parseFloat(inc.longitud);
+
+        if(!Number.isFinite(lat)||!Number.isFinite(lon)) return;
+
+        const ubicacionActual=String(inc.ubicacion||'').trim();
+        const esDireccionValida=
+          ubicacionActual &&
+          ubicacionActual!=='--' &&
+          ubicacionActual.toUpperCase()!=='N/A' &&
+          !/^(-?\d+(?:\.\d+)?)[,; ]+(-?\d+(?:\.\d+)?)$/.test(ubicacionActual);
+
+        if(esDireccionValida) return;
+
+        const requestId=++state.geocodeRequestId;
+
+        el.activeUbicacion.textContent='Buscando dirección literal...';
+        el.mapEmpty.style.display='none';
+
+        try{
+          const direccion=await obtenerDireccionLiteral(lat,lon);
+
+          if(requestId!==state.geocodeRequestId) return;
+
+          inc.ubicacion=direccion;
+
+          state.allRows=state.allRows.map(row=>
+            String(row.id_incidencia)===String(inc.id_incidencia)
+              ? {...row,ubicacion:direccion}
+              : row
+          );
+
+          if(
+            state.activeIncident &&
+            String(state.activeIncident.id_incidencia)===String(inc.id_incidencia)
+          ){
+            state.activeIncident={
+              ...state.activeIncident,
+              ubicacion:direccion
+            };
+          }
+
+          el.activeUbicacion.textContent=direccion;
+          guardarCacheIncidencias(state.allRows);
+          updateMap(state.activeIncident||inc);
+          if(state.mapMarker){
+            state.mapMarker.openPopup();
+          }
+          renderTable(state.rows);
+        }catch(e){
+          if(requestId!==state.geocodeRequestId) return;
+          console.warn('No fue posible obtener la dirección literal:',e);
+          el.activeUbicacion.textContent=
+            `Coordenadas: ${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+        }
+      }
+
+      function aplicarClienteConfigurado(){
+        if(el.clientRefText){
+          el.clientRefText.textContent =
+            `${CLIENTE_CONFIG.nombre} · ID ${CLIENTE_CONFIG.resourceId}`;
+        }
+        document.title =
+          `Gestor Virtual de Incidencias | ${CLIENTE_CONFIG.nombre}`;
+      }
+
+      function guardarCacheIncidencias(rows){
+        try{
+          localStorage.setItem(
+            DATA_CACHE_KEY,
+            JSON.stringify({
+              savedAt: Date.now(),
+              resourceId: CLIENTE_CONFIG.resourceId,
+              rows: Array.isArray(rows) ? rows : []
+            })
+          );
+        }catch(e){
+          console.warn('No fue posible guardar la caché local:', e);
+        }
+      }
+
+      function cargarCacheIncidencias(){
+        try{
+          const cache = JSON.parse(localStorage.getItem(DATA_CACHE_KEY) || 'null');
+          if(
+            cache &&
+            String(cache.resourceId) === String(CLIENTE_CONFIG.resourceId) &&
+            Array.isArray(cache.rows)
+          ){
+            return cache.rows;
+          }
+        }catch(e){
+          console.warn('No fue posible leer la caché local:', e);
+        }
+        return [];
+      }
+
+      function ensureAudioContext(){ if(!('AudioContext' in window || 'webkitAudioContext' in window)) return null; if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); if(audioCtx.state==='suspended') audioCtx.resume().catch(()=>{}); return audioCtx; }
+      function escapeHtml(str){ if(str===null||str===undefined) return ''; return String(str).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+      function normalizeStatus(v){ const s=String(v||'').toUpperCase(); return ['CERRADO','CERRADA','RESUELTO','ATENDIDO','ATENDIDA'].includes(s)?'CERRADO':'SIN_CERRAR'; }
+      function parseDate(v){ if(!v) return null; const s=String(v).trim(); const m=s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/); if(m){ const d=new Date(Number(m[3]),Number(m[2])-1,Number(m[1]),Number(m[4]||0),Number(m[5]||0),Number(m[6]||0)); return isNaN(d.getTime())?null:d; } const d=new Date(s); return isNaN(d.getTime())?null:d; }
+      function formatDate(v){ const d=parseDate(v); return d?d.toLocaleDateString('es-MX'):'--'; }
+      function formatTime(v){ const d=parseDate(v); return d?d.toLocaleTimeString('es-MX'):'--'; }
+      function formatTimeShort(v){ const d=parseDate(v); return d?d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}):'--'; }
+      function recordTime(r){ const d=parseDate(r.fecha_evento||r.fecha_recepcion); return d?d.getTime():0; }
+      function badge(label,extraClass){ return `<span class="badge ${escapeHtml(extraClass||'')}">${escapeHtml(label||'--')}</span>`; }
+      function isCriticalIncident(inc){ return String(inc?.severidad||'').toUpperCase()==='CRITICA'; }
+      function shouldAnnounceSeverity(inc){ const sev=String(inc?.severidad||'').toUpperCase(); const filter=String(state.voiceSeverityFilter||'ALL').toUpperCase(); if(filter==='ALL') return true; if(filter==='CRITICA') return sev==='CRITICA'; if(filter==='CRITICA_RELEVANTE') return sev==='CRITICA'||sev==='RELEVANTE'; return true; }
+      function isAnnounceableIncident(inc){ if(!inc) return false; const unidad=String(inc.unidad||'').trim().toUpperCase(); const evento=String(inc.evento||'').trim().toUpperCase(); if(!unidad||unidad==='N/A'||unidad==='--') return false; if(!evento||evento==='N/A'||evento==='--') return false; return true; }
+      function buildIncidentKey(inc){ return [inc.id_incidencia||'',inc.unidad||'',inc.evento||'',inc.fecha_evento||'',inc.fecha_recepcion||''].join('|'); }
+      function classifyIncident(r){
+        const src=String(r.evento||'').toLowerCase();
+        let cat=String(r.categoria_incidencia||'').trim();
+        if(!cat){
+          cat='Operativa';
+          if(/panico|pánico|sos/.test(src)) cat='Seguridad';
+          else if(/entrada|salida|geocerca|casa/.test(src)) cat='Geocerca';
+          else if(/temperatura|°c|grados centígrados|grados centigrados/.test(src)) cat='Temperatura';
+          else if(/velocidad/.test(src)) cat='Conducción';
+        }
+        const sev=String(r.severidad||inferSeverity(r)||'ORDINARIA').toUpperCase();
+        const protocolo=String(r.protocolo_sugerido||'').trim() ||
+          protocoloPorEvento(r.evento,sev,cat);
+
+        return {
+          ...r,
+          estatus:normalizeStatus(r.estatus),
+          categoria_incidencia:cat,
+          severidad:sev,
+          protocolo_sugerido:protocolo
+        };
+      }
+      function setVoiceStatus(){ let text='Voz desactivada', cls='pill critical'; if(!('speechSynthesis' in window)) text='Voz no compatible'; else if(!state.voiceEnabled) text='Voz silenciada'; else if(!voiceReady){ text='Voz esperando interacción'; cls='pill'; } else if(!state.availableVoices.length){ text='Voz sin listado'; cls='pill'; } else { text=state.speaking?'Voz anunciando':'Voz activa'; cls='pill ok'; } el.voiceStatusPill.className=cls; el.voiceStatusText.textContent=text; }
+      function unlockVoice(){ ensureAudioContext(); if(!('speechSynthesis' in window)){ voiceReady=false; setVoiceStatus(); return; } try{ speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(' '); u.volume=0; u.lang='es-MX'; u.onend=()=>{ voiceReady=true; setVoiceStatus(); }; u.onerror=()=>{ voiceReady=false; setVoiceStatus(); }; speechSynthesis.speak(u); setTimeout(()=>{ voiceReady=true; setVoiceStatus(); },300); }catch(e){ voiceReady=false; setVoiceStatus(); } }
+      function getIncidentAlertSound(inc){
+        const text=[
+          inc?.evento,
+          inc?.categoria_incidencia,
+          inc?.nombre_notificacion,
+          inc?.texto_notificacion,
+          inc?.tipo_disparo,
+          inc?.expresion
+        ].filter(Boolean).join(' ').toLowerCase();
+
+        if(/p[aá]nico|bot[oó]n de p[aá]nico|panic|\bsos\b/.test(text)){
+          return {
+            key:'panic',
+            url:INCIDENT_ALERT_SOUNDS.panic,
+            label:'Botón de pánico'
+          };
+        }
+
+        if(/parada prohibida|paradas prohibidas|detenci[oó]n prohibida|zona de parada prohibida/.test(text)){
+          return {
+            key:'forbiddenStop',
+            url:INCIDENT_ALERT_SOUNDS.forbiddenStop,
+            label:'Parada prohibida'
+          };
+        }
+
+        if(/desv[ií]o de ruta|desv[ií]o de rutas|fuera de ruta|ruta autorizada|route deviation|off route/.test(text)){
+          return {
+            key:'routeDeviation',
+            url:INCIDENT_ALERT_SOUNDS.routeDeviation,
+            label:'Desvío de ruta'
+          };
+        }
+
+        return null;
+      }
+
+      async function playIncidentAlertSound(inc){
+        const sound=getIncidentAlertSound(inc);
+        if(!sound) return false;
+
+        const incidentKey=buildIncidentKey(inc);
+        const soundKey=`${sound.key}|${incidentKey}`;
+        if(state.lastAlertSoundKey===soundKey) return true;
+
+        try{
+          if(state.alertAudio){
+            try{
+              state.alertAudio.pause();
+              state.alertAudio.currentTime=0;
+            }catch(e){}
+          }
+
+          const audio=new Audio(sound.url);
+          state.alertAudio=audio;
+          audio.preload='auto';
+          audio.volume=1;
+          state.lastAlertSoundKey=soundKey;
+
+          await audio.play();
+
+          await new Promise(resolve=>{
+            const done=()=>resolve();
+            audio.addEventListener('ended',done,{once:true});
+            audio.addEventListener('error',done,{once:true});
+            // Tope para evitar bloquear indefinidamente el speech si el audio es muy largo.
+            setTimeout(done,8000);
+          });
+          return true;
+        }catch(e){
+          console.warn(`No fue posible reproducir alerta ${sound.label}:`,e);
+          return false;
+        }
+      }
+
+      async function playCriticalSiren(durationMs=1600){ return new Promise((resolve)=>{ const ctx=ensureAudioContext(); if(!ctx){ resolve(); return; } const now=ctx.currentTime,endAt=now+durationMs/1000,gain=ctx.createGain(),osc=ctx.createOscillator(); gain.connect(ctx.destination); gain.gain.setValueAtTime(0.0001,now); osc.type='sawtooth'; osc.connect(gain); let t=now,hi=false; while(t<endAt){ osc.frequency.linearRampToValueAtTime(hi?900:620,t); gain.gain.setValueAtTime(0.001,t); gain.gain.linearRampToValueAtTime(0.09,t+0.04); gain.gain.linearRampToValueAtTime(0.03,Math.min(t+0.18,endAt)); hi=!hi; t+=0.18; } gain.gain.linearRampToValueAtTime(0.0001,endAt); osc.start(now); osc.stop(endAt+0.05); osc.onended=()=>resolve(); }); }
+      function buildApiUrl(path, params={}){
+        const base = String(WIALON_API_BASE || '').replace(/\/$/, '');
+        const cleanPath = String(path || '').startsWith('/') ? String(path || '') : '/' + String(path || '');
+        const url = new URL(base + cleanPath);
+        const rangoDia = obtenerRangoDiaActual();
+        const common = {
+          token: API_TOKEN,
+          cliente: WIALON_CLIENT.nombre,
+          clienteId: WIALON_CLIENT.id,
+          clientId: WIALON_CLIENT.id,
+          accountId: WIALON_CLIENT.id,
+          resourceId: CLIENTE_CONFIG.resourceId,
+          dias: 1,
+          timeFrom: params.timeFrom || rangoDia.timeFrom,
+          timeTo: params.timeTo || rangoDia.timeTo,
+          unidad: params.unidad || '',
+          from: el.fromFilter?.value || rangoDia.fecha,
+          to: el.toFilter?.value || rangoDia.fecha,
+          _ts: Date.now()
+        };
+        Object.entries({...common, ...params}).forEach(([k,v])=>{
+          if(v!==undefined && v!==null && String(v)!=='') url.searchParams.set(k, v);
+        });
+        return url.toString();
+      }
+      function normalizeWialonDate(value){
+        if(value===null || value===undefined || value==='') return '';
+        if(typeof value === 'number'){
+          const ms = value > 9999999999 ? value : value * 1000;
+          const d = new Date(ms);
+          return isNaN(d.getTime()) ? '' : d.toISOString();
+        }
+        const s = String(value).trim();
+        if(/^\d{10,13}$/.test(s)){
+          const n = Number(s);
+          const ms = n > 9999999999 ? n : n * 1000;
+          const d = new Date(ms);
+          return isNaN(d.getTime()) ? s : d.toISOString();
+        }
+        return s;
+      }
+      function inferSeverity(raw){
+        const direct = String(raw.severidad || raw.criticidad || raw.severity || raw.priority || '').trim().toUpperCase();
+        if(['CRITICA','CRÍTICA','CRITICAL'].includes(direct)) return 'CRITICA';
+        if(['RELEVANTE','ALTA','HIGH','MEDIUM'].includes(direct)) return 'RELEVANTE';
+        if(['ORDINARIA','BAJA','LOW','NORMAL'].includes(direct)) return 'ORDINARIA';
+        const text = [raw.evento, raw.event, raw.notification, raw.name, raw.tipo, raw.type].join(' ').toLowerCase();
+        if(/panico|pánico|sos|robo|desconexion|desconexión|jammer|bloqueo|accidente|combustible|descarga/.test(text)) return 'CRITICA';
+        if(/geocerca|desvio|desvío|ruta|parada|velocidad|entrada|salida/.test(text)) return 'RELEVANTE';
+        return 'ORDINARIA';
+      }
+      function normalizeApiRows(payload){
+        const source = Array.isArray(payload) ? payload :
+          Array.isArray(payload?.rows) ? payload.rows :
+          Array.isArray(payload?.data) ? payload.data :
+          Array.isArray(payload?.eventos) ? payload.eventos :
+          Array.isArray(payload?.incidencias) ? payload.incidencias :
+          Array.isArray(payload?.notifications) ? payload.notifications : [];
+
+        return source.map((raw, idx)=>{
+          const p = raw?.p || raw?.params || {};
+
+          const unit =
+            raw.unidad || raw.unit || raw.unitName || raw.nm ||
+            raw.nombreUnidad || raw.vehicle || raw.vehiculo ||
+            p.unit || p.unidad || '';
+
+          const event =
+            raw.evento || raw.event || raw.notification || raw.name ||
+            raw.tipo_evento || raw.type || raw.text || raw.message ||
+            p.event || p.evento || p.name || p.text || '';
+
+          const when = normalizeWialonDate(
+            raw.fecha_evento || raw.event_time || raw.msg_time ||
+            raw.time || raw.timestamp || raw.datetime || raw.fecha ||
+            raw.date || raw.createdAt || p.trigger_time || raw.t
+          );
+
+          const id =
+            raw.id_incidencia || raw.id || raw.event_id ||
+            raw.notification_id || raw.msg_id || raw.message_id ||
+            `${unit}-${event}-${when}-${idx}`;
+
+          const lat =
+            raw.latitud ?? raw.lat ?? raw.latitude ?? raw.y ??
+            raw.latd ?? raw.Latitude ?? p.y ?? p.lat ?? '';
+
+          const lon =
+            raw.longitud ?? raw.lon ?? raw.lng ?? raw.longitude ??
+            raw.x ?? raw.lond ?? raw.Longitude ?? p.x ?? p.lon ?? p.lng ?? '';
+
+          const severidad = inferSeverity(raw);
+
+          const categoria =
+            raw.categoria_incidencia ||
+            raw.categoria ||
+            raw.tipo_incidencia ||
+            '';
+
+          const protocolo =
+            String(
+              raw.protocolo_sugerido ||
+              raw.protocolo ||
+              raw.protocol ||
+              p.protocolo_sugerido ||
+              ''
+            ).trim() ||
+            protocoloPorEvento(event, severidad, categoria);
+
+          return {
+            ...raw,
+            id_incidencia: String(id || '').trim(),
+            cliente: raw.cliente || WIALON_CLIENT.nombre,
+            cliente_id: raw.cliente_id || raw.clienteId || WIALON_CLIENT.id,
+            unidad: String(unit || '').trim(),
+            evento: String(event || '').trim(),
+            fecha_evento: when,
+            fecha_recepcion: normalizeWialonDate(
+              raw.fecha_recepcion || raw.receivedAt || raw.created_at ||
+              raw.createdAt || raw.rt || Date.now()
+            ),
+            ubicacion:
+              raw.ubicacion || raw.location || raw.address ||
+              raw.direccion || raw.place || p.location ||
+              p.address || p.direccion || '',
+            latitud: lat,
+            longitud: lon,
+            velocidad:
+              raw.velocidad ?? raw.speed ?? raw.vel ?? raw.s ??
+              p.speed ?? p.s ?? '',
+            severidad,
+            estatus: normalizeStatus(
+              raw.estatus || raw.status || raw.estado ||
+              p.estatus || 'SIN_CERRAR'
+            ),
+            categoria_incidencia: categoria,
+            protocolo_sugerido: protocolo
+          };
+        }).filter(r=>r.id_incidencia && r.unidad && r.evento);
+      }
+
+      function protocoloPorEvento(evento, severidad, categoria=''){
+        const e = String(evento || '').toLowerCase();
+        const c = String(categoria || '').toLowerCase();
+        const s = String(severidad || '').toUpperCase();
+
+        if(/panico|pánico|sos|robo|asalto|secuestro|jammer/.test(e) || /seguridad/.test(c)){
+          return 'Contactar inmediatamente al operador, validar la ubicación y condición de la unidad, escalar al protocolo de seguridad y mantener seguimiento continuo hasta confirmar que la situación está controlada.';
+        }
+
+        if(/temperatura|grados|°c|frio|frío|congelad/.test(e) || /temperatura/.test(c)){
+          return 'Validar la lectura actual y la tendencia de temperatura, confirmar el producto transportado y el rango permitido, contactar al operador si la desviación continúa y documentar la atención realizada.';
+        }
+
+        if(/combustible|descarga|fuel|nivel de combustible/.test(e) || /combustible/.test(c)){
+          return 'Validar el nivel previo y posterior de combustible, ubicación, ignición y comportamiento reciente. Contactar al operador cuando corresponda y documentar cualquier variación atípica.';
+        }
+
+        if(/geocerca|entrada|salida/.test(e) || /geocerca/.test(c)){
+          return 'Validar si la entrada o salida de geocerca corresponde a la operación programada, confirmar ruta y ubicación de la unidad y documentar la acción tomada.';
+        }
+
+        if(/velocidad|exceso/.test(e) || /conducci/.test(c)){
+          return 'Validar velocidad, ubicación y condiciones de conducción. Contactar al operador cuando corresponda, solicitar corrección de la conducta y documentar la atención.';
+        }
+
+        if(/desvio|desvío|fuera de ruta|ruta/.test(e) || /ruta/.test(c)){
+          return 'Comparar la posición con la ruta autorizada, contactar al operador para validar la causa del desvío y escalar si no existe una justificación operativa.';
+        }
+
+        if(/parada|detenido|detención|detencion|ralent/.test(e) || /parada/.test(c)){
+          return 'Validar el tiempo detenido, ubicación y nivel de riesgo. Contactar al operador antes de escalar y documentar la causa de la detención.';
+        }
+
+        if(/ignición|ignicion|motor encendido|motor apagado/.test(e) || /ignici/.test(c)){
+          return 'Validar el cambio de ignición contra la operación esperada, revisar ubicación y condición actual de la unidad y documentar cualquier anomalía.';
+        }
+
+        if(/batería|bateria|voltaje|alimentación|alimentacion/.test(e) || /energ/.test(c)){
+          return 'Validar voltaje y alimentación del equipo, revisar posible desconexión o falla eléctrica y contactar al operador si existe riesgo de pérdida de comunicación.';
+        }
+
+        if(/sin señal|sin datos|offline|desconexión|desconexion/.test(e) || /conectividad/.test(c)){
+          return 'Validar la última comunicación y posición conocida, revisar alimentación del equipo y contactar al operador para confirmar la condición de la unidad.';
+        }
+
+        if(s === 'CRITICA'){
+          return 'Atender de inmediato como evento crítico, validar ubicación y condición de la unidad, contactar al operador y escalar conforme al protocolo de seguridad.';
+        }
+
+        if(s === 'RELEVANTE'){
+          return 'Validar el evento, ubicación y contexto operativo, contactar al operador cuando corresponda y documentar el resultado de la atención.';
+        }
+
+        return 'Revisar el evento, validar su contexto operativo y documentar la atención realizada.';
+      }
+
+      async function apiRequest(params={}){
+        const action=String(params.action||'list').trim();
+        const isWrite=['update_status','create','update','delete'].includes(action);
+        if(isWrite){
+          let lastError = null;
+          for(const path of WIALON_ENDPOINTS.status){
+            try{
+              const body=new URLSearchParams();
+              Object.entries({token:API_TOKEN, clienteId:WIALON_CLIENT.id, ...params}).forEach(([k,v])=>{
+                if(v!==undefined&&v!==null&&String(v)!=='') body.append(k,v);
+              });
+              const response=await fetch(buildApiUrl(path),{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8'},body:body.toString(),redirect:'follow'});
+              const raw=await response.text();
+              let json={ok:response.ok};
+              if(raw){
+                try{
+                  json=JSON.parse(raw);
+                }catch(parseError){
+                  json={
+                    ok:false,
+                    error:`El endpoint de estatus respondió HTTP ${response.status} y no devolvió JSON.`
+                  };
+                }
+              }
+              if(response.ok && (json.ok !== false)) return json;
+              lastError = new Error(json?.error || `HTTP ${response.status}`);
+            }catch(e){ lastError = e; }
+          }
+          throw lastError || new Error('No fue posible actualizar el estatus en el API.');
+        }
+        let lastError = null;
+        for(const path of WIALON_ENDPOINTS.list){
+          try{
+            const response=await fetch(buildApiUrl(path, params),{method:'GET',redirect:'follow'});
+            const raw=await response.text();
+            if(!response.ok) throw new Error(`HTTP ${response.status}: ${raw.substring(0,160)}`);
+            let json;
+            try{ json=JSON.parse(raw); }catch(e){ throw new Error('El backend no devolvió JSON válido: '+raw.substring(0,220)); }
+            const rows = normalizeApiRows(json);
+            return {ok:true, rows, source:path, raw:json};
+          }catch(e){ lastError = e; console.warn('Endpoint no disponible:', path, e.message); }
+        }
+        throw lastError || new Error('Ningún endpoint Wialon respondió correctamente.');
+      }
+      function loadStatusStore(){
+        try{
+          state.statusStore=JSON.parse(localStorage.getItem(STATUS_KEY)||'{}')||{};
+        }catch(e){
+          state.statusStore={};
+        }
+      }
+
+      function persistStatusStore(){
+        try{
+          localStorage.setItem(
+            STATUS_KEY,
+            JSON.stringify(state.statusStore)
+          );
+          return true;
+        }catch(e){
+          console.warn(
+            'El navegador no permitió guardar el estatus en localStorage:',
+            e
+          );
+          return false;
+        }
+      }
+
+      function applyStoredStatus(row){
+        const id=String(row?.id_incidencia||'');
+        const saved=state.statusStore[id];
+        if(!saved) return row;
+        return {
+          ...row,
+          estatus:normalizeStatus(saved.status),
+          status_updated_at:saved.updatedAt||''
+        };
+      }
+
+      function loadDeletedIds(){
+        try{
+          const values=JSON.parse(localStorage.getItem(DELETED_KEY)||'[]');
+          state.deletedIds=new Set(Array.isArray(values)?values.map(String):[]);
+        }catch(e){
+          state.deletedIds=new Set();
+        }
+      }
+
+      function persistDeletedIds(){
+        localStorage.setItem(
+          DELETED_KEY,
+          JSON.stringify(Array.from(state.deletedIds))
+        );
+      }
+
+      function isDeletedIncident(inc){
+        return state.deletedIds.has(String(inc?.id_incidencia||''));
+      }
+
+      function deleteVisibleRows(){
+        const visibleRows=Array.isArray(state.rows)?state.rows:[];
+        if(!visibleRows.length){
+          alert('No hay registros visibles para borrar.');
+          return;
+        }
+
+        const scopeLabel=state.tab==='historial'?'históricos':'pendientes';
+        const confirmed=confirm(
+          `Se borrarán ${visibleRows.length} registros ${scopeLabel} visibles en pantalla.\n\n` +
+          'Esta acción solo los oculta en esta instancia del gestor y no elimina las notificaciones originales de Wialon.\n\n' +
+          '¿Desea continuar?'
+        );
+
+        if(!confirmed) return;
+
+        visibleRows.forEach(row=>{
+          if(row?.id_incidencia){
+            state.deletedIds.add(String(row.id_incidencia));
+          }
+        });
+
+        persistDeletedIds();
+
+        const activeId=String(state.activeIncident?.id_incidencia||'');
+        if(activeId && state.deletedIds.has(activeId)){
+          state.activeIncident=null;
+        }
+
+        state.allRows=state.allRows.filter(row=>!isDeletedIncident(row));
+        guardarCacheIncidencias(state.allRows);
+        refreshViews();
+      }
+
+      function loadNotesStore(){ try{ state.notesStore = JSON.parse(localStorage.getItem(NOTES_KEY) || '{}') || {}; }catch(e){ state.notesStore = {}; } }
+      function persistNotesStore(){ localStorage.setItem(NOTES_KEY, JSON.stringify(state.notesStore)); }
+      function renderNotes(){ const id = state.activeIncident?.id_incidencia; if(!id){ el.monitorNotes.value=''; el.monitorNotes.disabled=true; el.saveNotesBtn.disabled=true; el.clearNotesBtn.disabled=true; el.notesStatusText.textContent='Seleccione una incidencia para registrar observaciones.'; return; } el.monitorNotes.disabled=false; el.saveNotesBtn.disabled=false; el.clearNotesBtn.disabled=false; const noteObj = state.notesStore[id]; el.monitorNotes.value = noteObj?.text || ''; el.notesStatusText.textContent = noteObj?.savedAt ? `Última actualización: ${noteObj.savedAt}` : 'Sin observaciones guardadas para esta incidencia.'; }
+      function saveCurrentNote(){ const id = state.activeIncident?.id_incidencia; if(!id) return; const text = String(el.monitorNotes.value || '').trim(); if(!text){ delete state.notesStore[id]; persistNotesStore(); renderNotes(); return; } state.notesStore[id] = { text, savedAt: new Date().toLocaleString('es-MX') }; persistNotesStore(); renderNotes(); }
+      function clearCurrentNote(){ const id = state.activeIncident?.id_incidencia; if(!id) return; delete state.notesStore[id]; persistNotesStore(); renderNotes(); }
+      function updateAlarmText(){ el.alarmText.textContent=state.activeIncident?`${state.activeIncident.severidad||'ORDINARIA'} · ${state.activeIncident.unidad||'--'} · ${state.activeIncident.evento||'--'}`:'Esperando incidencias críticas o relevantes...'; }
+      function updateMap(inc){ if(!state.map || !state.mapMarker) return; const lat = parseFloat(inc?.latitud); const lon = parseFloat(inc?.longitud); if (isNaN(lat) || isNaN(lon)) { el.mapCoords.textContent = '--'; el.mapSpeed.textContent = inc?.velocidad || '--'; el.mapEmpty.style.display = 'grid'; state.mapMarker.setOpacity(0); return; } el.mapEmpty.style.display = 'none'; el.mapCoords.textContent = `${lat.toFixed(5)}, ${lon.toFixed(5)}`; el.mapSpeed.textContent = inc?.velocidad || '--'; state.mapMarker.setLatLng([lat, lon]).setOpacity(1); const popupHtml = `<div style="min-width:240px;line-height:1.45;"><strong>${escapeHtml(inc?.unidad || '--')}</strong><br>Evento: ${escapeHtml(inc?.evento || '--')}<br>Ubicación: ${escapeHtml((inc?.ubicacion && inc.ubicacion !== '--') ? inc.ubicacion : 'Buscando dirección literal...')}<br>Hora: ${escapeHtml(formatTime(inc?.fecha_evento))}<br>Velocidad: ${escapeHtml(String(inc?.velocidad || '--'))}</div>`; state.mapMarker.bindPopup(popupHtml); state.mapMarker.bindTooltip(escapeHtml(inc?.ubicacion || 'Buscando dirección literal...'), {direction:'top', offset:[0,-10], opacity:0.95}); state.map.setView([lat, lon], 16); }
+      function renderActiveIncident(inc){ state.activeIncident=inc||null; if(!inc){ el.activeUnidad.textContent='Sin selección'; el.activeSeveridadWrap.innerHTML=badge('SIN CLASIFICAR','SIN_CLASIFICAR'); el.activeEvento.textContent='--'; el.activeTipo.textContent='--'; el.activeFecha.textContent='--'; el.activeHora.textContent='--'; el.activeUbicacion.textContent='--'; el.activeStatusWrap.innerHTML=badge('SIN CERRAR','SIN_CERRAR'); el.activeId.textContent='--'; el.activeProtocolo.textContent='Seleccione una incidencia para ver la recomendación operativa.'; updateMap(null); updateAlarmText(); renderNotes(); return; } el.activeUnidad.textContent=inc.unidad||'--'; el.activeSeveridadWrap.innerHTML=badge(inc.severidad||'SIN CLASIFICAR',inc.severidad||'SIN_CLASIFICAR'); el.activeEvento.textContent=inc.evento||'--'; el.activeTipo.textContent=inc.categoria_incidencia||'--'; el.activeFecha.textContent=formatDate(inc.fecha_evento); el.activeHora.textContent=formatTime(inc.fecha_evento); el.activeUbicacion.textContent=inc.ubicacion||'Sin dirección registrada'; el.activeStatusWrap.innerHTML=badge(normalizeStatus(inc.estatus).replace('_',' '),normalizeStatus(inc.estatus)); el.activeId.textContent=inc.id_incidencia||'--'; el.activeProtocolo.textContent=String(inc.protocolo_sugerido||'').trim() || protocoloPorEvento(inc.evento,inc.severidad,inc.categoria_incidencia); updateMap(inc); updateAlarmText(); renderNotes(); completarDireccionIncidencia(inc); }
+      function filteredRows(){ const search=String(el.searchInput.value||'').toLowerCase(); return state.allRows.filter(r=>{ const s=normalizeStatus(r.estatus); if(state.tab==='pendientes'&&s==='CERRADO') return false; if(state.tab==='historial'&&s==='SIN_CERRAR') return false; if(el.severityFilter.value&&String(r.severidad||'').toUpperCase()!==String(el.severityFilter.value).toUpperCase()) return false; if(el.statusFilter.value&&s!==String(el.statusFilter.value).toUpperCase()) return false; if(el.unitFilter.value&&String(r.unidad||'')!==String(el.unitFilter.value)) return false; if(el.typeFilter.value&&String(r.categoria_incidencia||'')!==String(el.typeFilter.value)) return false; const d=parseDate(r.fecha_evento||r.fecha_recepcion); if(el.fromFilter.value&&d){ const from=new Date(el.fromFilter.value+'T00:00:00'); if(d<from) return false; } if(el.toFilter.value&&d){ const to=new Date(el.toFilter.value+'T23:59:59'); if(d>to) return false; } const blob=[r.unidad||'',r.evento||'',r.id_incidencia||'',r.ubicacion||'',r.categoria_incidencia||''].join(' ').toLowerCase(); return blob.includes(search); }); }
+      function renderTable(rows){ if(!rows.length){ el.tableCounter.textContent='0 registros'; el.incidentsTableBody.innerHTML='<tr><td colspan="9">Sin datos.</td></tr>'; return; } el.tableCounter.textContent=`${rows.length} registros`; el.incidentsTableBody.innerHTML=rows.map(r=>{ const active=state.activeIncident?.id_incidencia===r.id_incidencia?'active-row':''; const s=normalizeStatus(r.estatus); return `<tr class="${active}" data-id="${escapeHtml(r.id_incidencia)}"><td>${escapeHtml(r.id_incidencia||'--')}</td><td>${formatDate(r.fecha_evento)}<br><small>${formatTime(r.fecha_evento)}</small></td><td>${escapeHtml(r.unidad||'--')}</td><td>${escapeHtml(r.evento||'--')}</td><td><strong>${escapeHtml(r.categoria_incidencia||'--')}</strong></td><td>${badge(r.severidad||'SIN CLASIFICAR',r.severidad||'SIN_CLASIFICAR')}</td><td>${badge(s,s)}</td><td><small>${escapeHtml(r.ubicacion||'--')}</small></td><td>${s==='SIN_CERRAR'?`<button class="row-close-btn" type="button" title="Marcar incidencia como cerrada" aria-label="Marcar incidencia como cerrada" data-close-id="${escapeHtml(r.id_incidencia)}">✓</button>`:'—'}</td></tr>`; }).join(''); }
+      function updateKpis(){ const stats={p:0,c:0,r:0,o:0,closed:0}; state.allRows.forEach(x=>{ const s=normalizeStatus(x.estatus); if(s==='CERRADO') stats.closed++; else stats.p++; const sev=String(x.severidad||'').toUpperCase(); if(sev==='CRITICA') stats.c++; else if(sev==='RELEVANTE') stats.r++; else stats.o++; }); el.kpiPendientes.textContent=stats.p; el.kpiCriticas.textContent=stats.c; el.kpiRelevantes.textContent=stats.r; el.kpiOrdinarias.textContent=stats.o; el.kpiCerradas.textContent=stats.closed; }
+      function populateFilters(){ const units=[...new Set(state.allRows.map(r=>String(r.unidad||'').trim()).filter(Boolean))].sort(); const types=[...new Set(state.allRows.map(r=>String(r.categoria_incidencia||'').trim()).filter(Boolean))].sort(); const cu=el.unitFilter.value, ct=el.typeFilter.value; el.unitFilter.innerHTML='<option value="">Todas</option>'+units.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join(''); el.typeFilter.innerHTML='<option value="">Todos</option>'+types.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join(''); el.unitFilter.value=units.includes(cu)?cu:''; el.typeFilter.value=types.includes(ct)?ct:''; }
+      function clearFilters(){ el.searchInput.value=''; el.severityFilter.value=''; el.statusFilter.value=''; el.unitFilter.value=''; el.typeFilter.value=''; el.fromFilter.value=''; el.toFilter.value=''; refreshViews(); }
+      function exportToExcel(){ const exportRows=state.rows.map(r=>({ID:r.id_incidencia||'',Fecha:formatDate(r.fecha_evento),Hora:formatTime(r.fecha_evento),Unidad:r.unidad||'',Evento:r.evento||'',Tipo:r.categoria_incidencia||'',Severidad:r.severidad||'',Estatus:normalizeStatus(r.estatus),Ubicación:r.ubicacion||'',Protocolo:r.protocolo_sugerido||'',Observaciones:state.notesStore[r.id_incidencia]?.text||''})); if(!exportRows.length){ alert('No hay registros para exportar.'); return; } const ws=XLSX.utils.json_to_sheet(exportRows); const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Incidencias'); XLSX.writeFile(wb,`incidencias_${CLIENTE_CONFIG.resourceId}.xlsx`); }
+      function logVoice(text){ const item=document.createElement('div'); item.className='voice-item'; item.innerHTML=`<small>${new Date().toLocaleTimeString()}</small><div>${escapeHtml(text)}</div>`; el.voiceLog.prepend(item); }
+      async function announceIncident(inc){
+        if(
+          !inc ||
+          state.speaking ||
+          !isAnnounceableIncident(inc) ||
+          !shouldAnnounceSeverity(inc) ||
+          !state.voiceEnabled ||
+          !('speechSynthesis' in window) ||
+          !voiceReady
+        ) return;
+
+        const now=Date.now();
+        if(now-(state.lastSpeechAt||0)<4000) return;
+
+        const key=buildIncidentKey(inc);
+        if(!key||state.announcedIds.has(key)) return;
+
+        // Antes de hablar, intenta obtener la dirección literal.
+        const lat=parseFloat(inc.latitud);
+        const lon=parseFloat(inc.longitud);
+        let ubicacion=String(inc.ubicacion||'').trim();
+
+        const ubicacionNoValida=
+          !ubicacion ||
+          ubicacion==='--' ||
+          ubicacion.toUpperCase()==='N/A' ||
+          /^(-?\d+(?:\.\d+)?)[,; ]+(-?\d+(?:\.\d+)?)$/.test(ubicacion);
+
+        if(
+          ubicacionNoValida &&
+          Number.isFinite(lat) &&
+          Number.isFinite(lon)
+        ){
+          try{
+            ubicacion=await obtenerDireccionLiteral(lat,lon);
+            inc.ubicacion=ubicacion;
+
+            state.allRows=state.allRows.map(row=>
+              String(row.id_incidencia)===String(inc.id_incidencia)
+                ? {...row,ubicacion}
+                : row
+            );
+
+            if(
+              state.activeIncident &&
+              String(state.activeIncident.id_incidencia)===String(inc.id_incidencia)
+            ){
+              state.activeIncident={
+                ...state.activeIncident,
+                ubicacion
+              };
+            }
+
+            guardarCacheIncidencias(state.allRows);
+            el.activeUbicacion.textContent=ubicacion;
+            updateMap(state.activeIncident||inc);
+            renderTable(state.rows);
+          }catch(e){
+            console.warn(
+              'La voz continuará sin dirección literal:',
+              e.message
+            );
+          }
+        }
+
+        const sev=String(inc.severidad||'').trim().toUpperCase();
+        const sevTxt=
+          sev==='CRITICA' ? 'crítica' :
+          sev==='RELEVANTE' ? 'relevante' :
+          sev==='ORDINARIA' ? 'ordinaria' : '';
+
+        const unidad=String(inc.unidad||'')
+          .replace(/%/g,'')
+          .trim();
+
+        const evento=String(inc.evento||'')
+          .replace(/%/g,'')
+          .replace(/_/g,' ')
+          .replace(/\s+/g,' ')
+          .trim();
+
+        ubicacion=String(inc.ubicacion||ubicacion||'')
+          .replace(/\s+/g,' ')
+          .trim();
+
+        const ubicacionBreve=
+          ubicacion.length>180
+            ? ubicacion.substring(0,180)+'...'
+            : ubicacion;
+
+        const hora=formatTimeShort(inc.fecha_evento);
+
+        const protocoloBreve=String(inc.protocolo_sugerido||'')
+          .replace(/\s+/g,' ')
+          .trim()
+          .split('.')
+          .filter(Boolean)[0];
+
+        let text='Atención.';
+        if(sevTxt) text+=` Incidencia ${sevTxt}.`;
+        if(unidad) text+=` Unidad ${unidad}.`;
+        if(evento) text+=` Evento ${evento}.`;
+
+        if(
+          ubicacionBreve &&
+          ubicacionBreve!=='--' &&
+          ubicacionBreve.toUpperCase()!=='N/A'
+        ){
+          text+=` Dirección de ocurrencia: ${ubicacionBreve}.`;
+        }else if(
+          Number.isFinite(lat) &&
+          Number.isFinite(lon)
+        ){
+          text+=` Ubicación registrada en las coordenadas ${lat.toFixed(5)}, ${lon.toFixed(5)}.`;
+        }
+
+        if(hora&&hora!=='--'){
+          text+=` Hora ${hora}.`;
+        }
+
+        if(protocoloBreve){
+          text+=` Protocolo recomendado: ${protocoloBreve}.`;
+        }
+
+        try{
+          speechSynthesis.cancel();
+
+          const ut=new SpeechSynthesisUtterance(text);
+          ut.volume=1;
+          ut.rate=0.92;
+          ut.pitch=1;
+
+          const selected=
+            state.availableVoices.find(
+              v=>String(v.lang||'').toLowerCase()==='es-mx'
+            ) ||
+            state.availableVoices.find(v=>/mex/i.test(v.name)) ||
+            state.availableVoices.find(
+              v=>v.voiceURI===state.selectedVoiceURI
+            ) ||
+            null;
+
+          if(selected){
+            ut.voice=selected;
+            ut.lang=selected.lang||'es-MX';
+          }else{
+            ut.lang='es-MX';
+          }
+
+          state.announcedIds.add(key);
+          state.lastSpeechAt=Date.now();
+
+          const specialAlertPlayed=await playIncidentAlertSound(inc);
+          if(!specialAlertPlayed && isCriticalIncident(inc)){
+            try{
+              await playCriticalSiren();
+            }catch(e){}
+          }
+
+          state.speaking=true;
+          setVoiceStatus();
+
+          ut.onend=()=>{
+            state.speaking=false;
+            setVoiceStatus();
+          };
+
+          ut.onerror=(e)=>{
+            state.speaking=false;
+            setVoiceStatus();
+            console.warn('Error de speechSynthesis:',e);
+            state.announcedIds.add(key);
+          };
+
+          speechSynthesis.speak(ut);
+          logVoice(text);
+        }catch(e){
+          state.speaking=false;
+          setVoiceStatus();
+          console.warn('Error general al anunciar:',e);
+          state.announcedIds.add(key);
+        }
+      }
+
+      async function updateStatus(status,id){
+        const normalized=normalizeStatus(status);
+        const incidentId=String(id||'').trim();
+        if(!incidentId) return;
+
+        // Actualización visual inmediata.
+        state.allRows=state.allRows.map(row=>
+          String(row.id_incidencia)===incidentId
+            ? {...row,estatus:normalized}
+            : row
+        );
+
+        if(
+          state.activeIncident &&
+          String(state.activeIncident.id_incidencia)===incidentId
+        ){
+          state.activeIncident={
+            ...state.activeIncident,
+            estatus:normalized
+          };
+        }
+
+        // Persistencia local en segundo término; no bloquea la interfaz.
+        try{
+          state.statusStore[incidentId]={
+            status:normalized,
+            updatedAt:new Date().toISOString()
+          };
+          persistStatusStore();
+        }catch(e){
+          console.warn('No fue posible conservar el estatus localmente:',e);
+        }
+
+        try{
+          guardarCacheIncidencias(state.allRows);
+        }catch(e){
+          console.warn('No fue posible actualizar la caché:',e);
+        }
+
+        refreshViews();
+
+        // Sincronización opcional. La falta del endpoint no revierte el cambio.
+        try{
+          const res=await apiRequest({
+            action:'update_status',
+            token:API_TOKEN,
+            id_incidencia:incidentId,
+            status:normalized,
+            resourceId:CLIENTE_CONFIG.resourceId
+          });
+          if(!res?.ok){
+            console.warn('Estatus aplicado localmente; backend no disponible.');
+          }
+        }catch(e){
+          console.warn(
+            'Estatus aplicado localmente. Sin sincronización de backend:',
+            e.message
+          );
+        }
+      }
+
+      function getLatestAnnounceable(){ return state.allRows.find(r=>normalizeStatus(r.estatus)==='SIN_CERRAR'&&isAnnounceableIncident(r)&&shouldAnnounceSeverity(r)&&!state.announcedIds.has(buildIncidentKey(r)))||null; }
+      function refreshViews(){ populateFilters(); state.rows=filteredRows(); renderTable(state.rows); updateKpis(); const active=state.activeIncident?state.allRows.find(x=>x.id_incidencia===state.activeIncident.id_incidencia):null; if(active) renderActiveIncident(active); else if(state.allRows[0]) renderActiveIncident(state.allRows[0]); else renderActiveIncident(null); el.lastUpdateText.textContent='Actualizado: '+new Date().toLocaleTimeString(); }
+      async function refreshAll(force=false){
+        try{
+          const rangoDia=obtenerRangoDiaActual();
+          const res=await apiRequest({
+            action:'list',
+            resourceId:CLIENTE_CONFIG.resourceId,
+            dias:1,
+            timeFrom:rangoDia.timeFrom,
+            timeTo:rangoDia.timeTo
+          });
+          if(!res?.ok) throw new Error(res?.error||'API respondió error');
+
+          const recursoBackend = res.raw?.recurso;
+          if(
+            recursoBackend?.resourceId &&
+            String(recursoBackend.resourceId) !== String(CLIENTE_CONFIG.resourceId)
+          ){
+            throw new Error('El backend devolvió un recurso distinto al configurado.');
+          }
+
+          state.totalMonitoredUnits=Number(
+            res.raw?.total_unidades_cliente ||
+            res.raw?.unidades_consultadas ||
+            state.totalMonitoredUnits ||
+            0
+          );
+
+          state.allRows=(res.rows||[])
+            .map(classifyIncident)
+            .map(applyStoredStatus)
+            .filter(row=>!isDeletedIncident(row))
+            .sort((a,b)=>recordTime(b)-recordTime(a));
+
+          guardarCacheIncidencias(state.allRows);
+          refreshViews();
+          if(state.appView==='analytics') renderAnalytics();
+
+          const latest=getLatestAnnounceable();
+          if(latest){
+            renderActiveIncident(latest);
+            updateAlarmText();
+            await announceIncident(latest);
+          }
+
+          el.apiStatusPill.className='pill ok';
+          el.apiStatusText.textContent='API Wialon conectada';
+        }catch(e){
+          console.error('Error de conexión:',e);
+
+          if(!state.allRows.length){
+            const cacheRows=cargarCacheIncidencias();
+            if(cacheRows.length){
+              state.allRows=cacheRows
+                .map(classifyIncident)
+                .map(applyStoredStatus)
+                .filter(row=>!isDeletedIncident(row))
+                .sort((a,b)=>recordTime(b)-recordTime(a));
+              refreshViews();
+              el.apiStatusPill.className='pill';
+              el.apiStatusText.textContent='Mostrando caché local';
+              el.lastUpdateText.textContent='Sin conexión · datos conservados';
+              return;
+            }
+          }
+
+          el.apiStatusPill.className='pill critical';
+          el.apiStatusText.textContent='API sin conexión';
+          el.lastUpdateText.textContent='Fallo de Red: Verifique endpoint Node/Wialon';
+        }
+      }
+      function loadVoices(){ if(!('speechSynthesis' in window)) return; const voices=speechSynthesis.getVoices()||[]; state.availableVoices=voices.filter(v=>String(v.lang||'').toLowerCase().startsWith('es')); const preferred=state.availableVoices.find(v=>String(v.lang||'').toLowerCase()==='es-mx')||state.availableVoices.find(v=>/mex/i.test(v.name))||state.availableVoices[0]; el.voiceSelect.innerHTML=['<option value="">Predeterminada</option>'].concat(state.availableVoices.map(v=>`<option value="${escapeHtml(v.voiceURI)}">${escapeHtml(v.name)} - ${escapeHtml(v.lang)}</option>`)).join(''); if(!state.selectedVoiceURI&&preferred) state.selectedVoiceURI=preferred.voiceURI; el.voiceSelect.value=state.selectedVoiceURI||''; const selected=state.availableVoices.find(v=>v.voiceURI===state.selectedVoiceURI)||preferred; el.voiceNameText.textContent=selected?`${selected.name} (${selected.lang})`:'Predeterminada'; setVoiceStatus(); }
+
+      function destroyAnalyticsCharts(){
+        Object.values(state.analyticsCharts||{}).forEach(chart=>{try{chart.destroy();}catch(e){}});
+        state.analyticsCharts={};
+      }
+
+      function analyticsRows(){
+        const now=new Date();
+        const period=el.analyticsPeriod?.value||'today';
+        let from=null,to=null;
+
+        if(period==='today'){
+          from=new Date(now.getFullYear(),now.getMonth(),now.getDate(),0,0,0,0);
+          to=new Date(now.getFullYear(),now.getMonth(),now.getDate(),23,59,59,999);
+        }else if(period==='24h'){
+          to=now; from=new Date(now.getTime()-86400000);
+        }else if(period==='7d'){
+          to=now; from=new Date(now.getTime()-7*86400000);
+        }else{
+          if(el.analyticsFrom?.value) from=new Date(el.analyticsFrom.value+'T00:00:00');
+          if(el.analyticsTo?.value) to=new Date(el.analyticsTo.value+'T23:59:59');
+        }
+
+        return state.allRows.filter(r=>{
+          const d=parseDate(r.fecha_evento||r.fecha_recepcion);
+          if(!d) return false;
+          if(from && d<from) return false;
+          if(to && d>to) return false;
+          return true;
+        });
+      }
+
+      function episodeLabel(row){
+        const ep=String(row.episodio||'').toUpperCase();
+        const labels={
+          ENTRADA_GEOCERCA:'Entrada a geocerca',
+          INICIO_EXCESO_VELOCIDAD:'Exceso de velocidad',
+          BOTON_PANICO:'Botón de pánico',
+          INICIO_DESVIO_RUTA:'Desvío de ruta',
+          DESCONEXION_BATERIA:'Desconexión de batería',
+          ADAS_USO_CELULAR:'Uso de celular',
+          ADAS_BOSTEZO:'Bostezo',
+          ADAS_OJOS_CERRADOS:'Ojos cerrados',
+          ADAS_CONDUCTOR_FUMANDO:'Conductor fumando',
+          ADAS_ADVERTENCIA_COLISION:'Advertencia de colisión'
+        };
+        return labels[ep] || row.evento || row.categoria_incidencia || 'Otra';
+      }
+
+      function mixChannel(a,b,t){
+        return Math.round(a + (b - a) * t);
+      }
+
+      function buildRankingTheme(index,total,palette){
+        const safeTotal=Math.max(total,1);
+        const t=safeTotal===1 ? 0 : index / Math.max(safeTotal-1,1);
+
+        const presets = palette==='orange'
+          ? {start:[255,120,32], end:[255,190,90], accent:[255,150,46]}
+          : {start:[255,72,72], end:[255,170,170], accent:[255,108,108]};
+
+        const left = [
+          mixChannel(presets.start[0], presets.end[0], t),
+          mixChannel(presets.start[1], presets.end[1], t),
+          mixChannel(presets.start[2], presets.end[2], t)
+        ];
+
+        const accent = [
+          mixChannel(presets.accent[0], presets.end[0], t * 0.8),
+          mixChannel(presets.accent[1], presets.end[1], t * 0.8),
+          mixChannel(presets.accent[2], presets.end[2], t * 0.8)
+        ];
+
+        return {
+          accent:`rgb(${accent[0]}, ${accent[1]}, ${accent[2]})`,
+          style:[
+            `--rank-accent: rgb(${accent[0]}, ${accent[1]}, ${accent[2]})`,
+            `background: linear-gradient(90deg, rgba(${left[0]}, ${left[1]}, ${left[2]}, .30) 0%, rgba(${left[0]}, ${left[1]}, ${left[2]}, .12) 48%, rgba(255,255,255,.03) 100%)`,
+            `border: 1px solid rgba(${accent[0]}, ${accent[1]}, ${accent[2]}, .24)`,
+            `box-shadow: inset 0 1px 0 rgba(255,255,255,.03), 0 0 20px rgba(${accent[0]}, ${accent[1]}, ${accent[2]}, .08)`
+          ].join(';')
+        };
+      }
+
+      function buildRankingRow(rank,labelHtml,value,palette,total){
+        const theme = buildRankingTheme(rank - 1,total,palette);
+        return `<div class="ranking-row" style="${theme.style}"><span class="rank">${rank}</span><span>${labelHtml}</span><span class="value">${value}</span></div>`;
+      }
+
+      function renderAnalytics(){
+        const rows=analyticsRows();
+        const closed=rows.filter(r=>normalizeStatus(r.estatus)==='CERRADO').length;
+        const critical=rows.filter(r=>String(r.severidad||'').toUpperCase()==='CRITICA').length;
+        const relevant=rows.filter(r=>String(r.severidad||'').toUpperCase()==='RELEVANTE').length;
+        const ordinary=rows.length-critical-relevant;
+
+        const affectedSet=new Set(rows.map(r=>String(r.unidad||'').trim()).filter(Boolean));
+        const monitored=Math.max(Number(state.totalMonitoredUnits||0),affectedSet.size);
+        const clean=Math.max(monitored-affectedSet.size,0);
+
+        const repeatMap=new Map();
+        rows.forEach(r=>{
+          const key=`${r.unidad||''}|${episodeLabel(r)}`;
+          repeatMap.set(key,(repeatMap.get(key)||0)+1);
+        });
+        const repeatUnits=new Set([...repeatMap.entries()].filter(([,c])=>c>=2).map(([k])=>k.split('|')[0]));
+
+        el.anTotal.textContent=rows.length;
+        el.anCritical.textContent=critical;
+        el.anRelevant.textContent=relevant;
+        el.anOrdinary.textContent=ordinary;
+        el.anClosed.textContent=closed;
+        el.anAttentionRate.textContent=rows.length?`${((closed/rows.length)*100).toFixed(1)}%`:'0%';
+        el.anMonitoredUnits.textContent=monitored;
+        el.anAffectedUnits.textContent=affectedSet.size;
+        el.anCleanUnits.textContent=clean;
+        el.anRepeatUnits.textContent=repeatUnits.size;
+
+        const typeCounts={};
+        rows.forEach(r=>{const k=episodeLabel(r); typeCounts[k]=(typeCounts[k]||0)+1;});
+        const typeEntries=Object.entries(typeCounts).sort((a,b)=>b[1]-a[1]);
+
+        const hourly=Array.from({length:24},(_,h)=>({hour:String(h).padStart(2,'0')+':00',count:0}));
+        rows.forEach(r=>{const d=parseDate(r.fecha_evento||r.fecha_recepcion); if(d) hourly[d.getHours()].count++;});
+
+        const unitCounts={};
+        rows.forEach(r=>{const u=String(r.unidad||'Sin unidad'); unitCounts[u]=(unitCounts[u]||0)+1;});
+        const topUnits=Object.entries(unitCounts).sort((a,b)=>b[1]-a[1]).slice(0,10);
+        const repeatRows=[...repeatMap.entries()].filter(([,c])=>c>=2).sort((a,b)=>b[1]-a[1]).slice(0,10);
+
+        el.analyticsTopUnits.innerHTML=topUnits.length
+          ? topUnits.map(([u,c],i)=>buildRankingRow(i+1,escapeHtml(u),c,'red',topUnits.length)).join('')
+          : '<div class="ranking-row"><span></span><span>Sin datos</span><span></span></div>';
+
+        el.analyticsRepeatUnitsList.innerHTML=repeatRows.length
+          ? repeatRows.map(([key,c],i)=>{const parts=key.split('|'); return buildRankingRow(i+1,`${escapeHtml(parts[0])}<br><small>${escapeHtml(parts.slice(1).join('|'))}</small>`,c,'orange',repeatRows.length);}).join('')
+          : '<div class="ranking-row"><span></span><span>Sin reincidencias en el período</span><span></span></div>';
+
+        if(typeof Chart==='undefined') return;
+        destroyAnalyticsCharts();
+
+        state.analyticsCharts.types=new Chart(document.getElementById('chartIncidentTypes'),{
+          type:'bar',
+          data:{labels:typeEntries.map(x=>x[0]),datasets:[{label:'Incidencias',data:typeEntries.map(x=>x[1])}]},
+          options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,ticks:{precision:0}}}}
+        });
+
+        state.analyticsCharts.hourly=new Chart(document.getElementById('chartHourly'),{
+          type:'line',
+          data:{labels:hourly.map(x=>x.hour),datasets:[{label:'Incidencias',data:hourly.map(x=>x.count),tension:.28,fill:false}]},
+          options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{precision:0}}}}
+        });
+
+        state.analyticsCharts.severity=new Chart(document.getElementById('chartSeverity'),{
+          type:'doughnut',
+          data:{labels:['Críticas','Relevantes','Ordinarias'],datasets:[{data:[critical,relevant,ordinary]}]},
+          options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}
+        });
+      }
+
+      function setAppView(view){
+        state.appView=view;
+        el.appNav.querySelectorAll('.app-nav-btn').forEach(btn=>btn.classList.toggle('active',btn.dataset.view===view));
+
+        const mon=view==='monitor', ana=view==='analytics', hist=view==='history';
+        el.monitorAlarmSection.style.display=mon?'flex':'none';
+        el.monitorKpisSection.style.display=mon?'grid':'none';
+        el.activeIncidentSection.style.display=mon?'block':'none';
+        el.analyticsSection.classList.toggle('active',ana);
+        el.incidentsListSection.style.display=(mon||hist)?'block':'none';
+
+        if(hist){
+          state.tab='historial';
+          const target=el.tabsWrap.querySelector('[data-tab="historial"]');
+          el.tabsWrap.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===target));
+          refreshViews();
+        }else if(mon){
+          state.tab='pendientes';
+          const target=el.tabsWrap.querySelector('[data-tab="pendientes"]');
+          el.tabsWrap.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===target));
+          refreshViews();
+        }else if(ana){
+          renderAnalytics();
+        }
+      }
+
+      function bindEvents(){
+        el.appNav.onclick=(e)=>{const btn=e.target.closest('.app-nav-btn');if(btn)setAppView(btn.dataset.view);};
+        el.analyticsPeriod.onchange=()=>{const custom=el.analyticsPeriod.value==='custom';el.analyticsFromWrap.style.display=custom?'grid':'none';el.analyticsToWrap.style.display=custom?'grid':'none';renderAnalytics();};
+        el.analyticsFrom.onchange=renderAnalytics;
+        el.analyticsTo.onchange=renderAnalytics;
+        el.analyticsRefreshBtn.onclick=renderAnalytics;
+ el.tabsWrap.onclick=(e)=>{ const b=e.target.closest('.tab'); if(!b) return; state.tab=b.dataset.tab; el.tabModeText.textContent=b.textContent; el.tabsWrap.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===b)); refreshViews(); }; el.refreshBtn.onclick=()=>refreshAll(true); el.searchInput.oninput=refreshViews; el.severityFilter.onchange=refreshViews; el.statusFilter.onchange=refreshViews; el.unitFilter.onchange=refreshViews; el.typeFilter.onchange=refreshViews; el.fromFilter.onchange=refreshViews; el.toFilter.onchange=refreshViews; el.clearFiltersBtn.onclick=clearFilters; el.exportExcelBtn.onclick=exportToExcel; el.deleteVisibleBtn.onclick=deleteVisibleRows;
+
+        el.incidentsTableBody.addEventListener('click',(e)=>{
+          const closeBtn=e.target.closest('button[data-close-id]');
+          if(closeBtn){
+            e.preventDefault();
+            e.stopPropagation();
+            const incidentId=String(closeBtn.dataset.closeId||'').trim();
+            closeBtn.disabled=true;
+            closeBtn.textContent='…';
+            updateStatus('CERRADO',incidentId)
+              .catch(err=>{
+                console.error('No fue posible cerrar la incidencia:',err);
+                closeBtn.disabled=false;
+                closeBtn.textContent='✓';
+              });
+            return;
+          }
+
+          const row=e.target.closest('tr[data-id]');
+          if(!row) return;
+          const found=state.allRows.find(
+            x=>String(x.id_incidencia)===String(row.dataset.id)
+          );
+          if(found){
+            renderActiveIncident(found);
+            renderTable(state.rows);
+          }
+        }); el.voiceSeverityFilter.onchange=()=>{ state.voiceSeverityFilter=el.voiceSeverityFilter.value||'ALL'; }; el.toggleVoiceBtn.onclick=()=>{ state.voiceEnabled=!state.voiceEnabled; if(!state.voiceEnabled&&'speechSynthesis' in window) speechSynthesis.cancel(); el.toggleVoiceBtn.textContent=state.voiceEnabled?'Silenciar voz':'Activar voz'; setVoiceStatus(); }; el.testVoiceBtn.onclick=()=>{ unlockVoice(); if(!('speechSynthesis' in window)) return; setTimeout(()=>{ const ut=new SpeechSynthesisUtterance('Prueba de voz del gestor virtual de incidencias.'); ut.volume=1; ut.rate=0.95; ut.pitch=1; const selected=state.availableVoices.find(v=>String(v.lang||'').toLowerCase()==='es-mx')||state.availableVoices.find(v=>/mex/i.test(v.name))||state.availableVoices.find(v=>v.voiceURI===state.selectedVoiceURI)||state.availableVoices[0]; if(selected){ ut.voice=selected; ut.lang=selected.lang||'es-MX'; } else ut.lang='es-MX'; speechSynthesis.cancel(); speechSynthesis.speak(ut); },350); }; el.voiceSelect.onchange=()=>{ state.selectedVoiceURI=el.voiceSelect.value||''; const selected=state.availableVoices.find(v=>v.voiceURI===state.selectedVoiceURI); el.voiceNameText.textContent=selected?`${selected.name} (${selected.lang})`:'Predeterminada'; }; el.markClosedBtn.onclick=()=>{ if(state.activeIncident?.id_incidencia) updateStatus('CERRADO',state.activeIncident.id_incidencia).catch(e=>alert(e.message)); }; el.markAttentionBtn.onclick=()=>{ if(state.activeIncident?.id_incidencia) updateStatus('SIN_CERRAR',state.activeIncident.id_incidencia).catch(e=>alert(e.message)); }; el.saveNotesBtn.onclick=saveCurrentNote; el.clearNotesBtn.onclick=clearCurrentNote; ['click','touchstart','keydown'].forEach(evt=>{ document.addEventListener(evt,()=>{ unlockVoice(); },{once:true}); }); }
+      function init(){ aplicarClienteConfigurado(); aplicarFechaActualAFiltros(); loadStatusStore(); loadDeletedIds(); loadAddressCache(); if(typeof L==='undefined'){ el.apiStatusPill.className='pill critical'; el.apiStatusText.textContent='Mapa sin cargar'; return; } loadNotesStore(); state.map=L.map('eventMap').setView(FALLBACK_COORDS,11); L.tileLayer(
+  'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+  {
+    maxZoom: 20,
+    attribution: '&copy; OpenStreetMap contributors, Tiles style by HOT'
+  }
+).addTo(state.map); state.mapMarker=L.marker(FALLBACK_COORDS,{opacity:0}).addTo(state.map); bindEvents(); if('speechSynthesis' in window){ if(speechSynthesis.onvoiceschanged!==undefined) speechSynthesis.onvoiceschanged=loadVoices; loadVoices(); } else setVoiceStatus(); refreshAll(true); setInterval(()=>refreshAll(false), REFRESH_MS); }
+      window.onload=init;
+    })();
+  </script>
+</body>
+</html>
